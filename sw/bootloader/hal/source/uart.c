@@ -88,15 +88,23 @@ void uart_puth(uint32_t num) {
 }
 
 
+static int s_stream_first_byte = 1;
+
 /**********************************************************************//**
- * Setup UART device for executable streaming. Just a dummy.
+ * Setup UART device for executable streaming. Flushes FIFO.
  *
  * @return 0 if success, !=0 if error
  **************************************************************************/
 int uart_setup(void) {
 
 #if (UART_EN == 1)
-  return 0; // nothing to do here
+  s_stream_first_byte = 1;
+  if (neorv32_uart_available(NEORV32_UART0)) {
+    while (neorv32_uart_char_received(NEORV32_UART0)) {
+      (void)neorv32_uart_getc(NEORV32_UART0);
+    }
+  }
+  return 0;
 #else
   return 1;
 #endif
@@ -115,7 +123,17 @@ int uart_stream_get(uint32_t* rdata) {
   int i;
   subwords32_t tmp;
   for (i=0; i<4; i++) {
-    tmp.uint8[i] = (uint8_t)uart_getc();
+    uint8_t c;
+    if (s_stream_first_byte) {
+      // Discard any leading CR/LF/spaces from typing 'u<Enter>'
+      do {
+        c = (uint8_t)uart_getc();
+      } while (c == '\r' || c == '\n' || c == ' ');
+      s_stream_first_byte = 0;
+    } else {
+      c = (uint8_t)uart_getc();
+    }
+    tmp.uint8[i] = c;
   }
   *rdata = tmp.uint32;
   return 0;

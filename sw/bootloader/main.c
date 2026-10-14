@@ -123,7 +123,12 @@ skip_auto_boot:
     if (cmd == 'u') {
       uart_puts("Awaiting "THEME_EXE"... ");
       if (system_app_load(uart_setup, uart_stream_get)) {
-        break; // halt (to prevent garbage stream to trigger stuff)
+        if (neorv32_uart_available(NEORV32_UART0)) {
+          while (neorv32_uart_char_received(NEORV32_UART0)) {
+            (void)neorv32_uart_getc(NEORV32_UART0);
+          }
+        }
+        continue;
       }
     }
 
