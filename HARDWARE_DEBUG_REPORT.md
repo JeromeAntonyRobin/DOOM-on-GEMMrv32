@@ -175,6 +175,14 @@ Both issues have been investigated down to their exact hardware/firmware root ca
      - `LD1` = PS/2 Data (`B17`)
      - `LD7` = MMCM Locked (50 MHz clock healthy)
 
+6. **Bootloader UART Stream Synchronization & `ERROR_SIGNATURE` Recovery:**
+   - **Root Cause:** When typing `u` followed by `<Enter>` in terminal emulators, the trailing `\r` and `\n` characters remained in the UART0 hardware RX FIFO. When `system_app_load` began, it immediately consumed `\r` and `\n` as the first bytes of the binary header instead of the `"NEO!"` (`0x214F454E`) signature, causing an immediate `\aERROR_SIGNATURE` mismatch.
+   - Furthermore, the upstream bootloader executed `break;` on upload failure, causing the CPU to drop into an infinite `wfi` panic loop that permanently hung the board until reset.
+   - **Fix:**
+     1. Updated `uart_setup()` in `sw/bootloader/hal/source/uart.c` to proactively drain the hardware RX FIFO.
+     2. Updated `uart_stream_get()` to automatically discard any leading CR/LF/space characters before reading the 4-byte executable header, synchronizing directly onto the binary file's payload.
+     3. Changed `main.c` to flush and `continue;` on upload errors rather than `break;`, allowing the console to cleanly return to `CMD:>` so developers can immediately re-try uploads without resetting the board.
+
 ---
 
 ## 5. File Modifications Summary
