@@ -200,7 +200,39 @@ Both issues have been investigated down to their exact hardware/firmware root ca
 
 ---
 
-## 6. Verification Checklist
+## 6. Issue 4: Uploader Premature Execution & `ERROR_EXCEPTION 0x7 0xFFE006A8 0x0001000C`
+
+### Symptoms
+- During serial firmware upload in `gemm_dashboard.py`, the terminal displayed:
+  ```text
+  [SEND FILE SUCCESS] Sent 3700 bytes successfully.
+  ERROR_EXCEPTION 0x00000007 0xFFE006A8 0x0001000C
+  ```
+
+### Root Cause Analysis
+1. **Blind Boot Trigger (`'e'`) in Dashboard:**
+   - In `gemm_dashboard.py`, after sending the binary stream, the script blindly issued `flash_ser.write(b"e")` without waiting for or verifying that the bootloader returned `"OK"`.
+   - If the upload failed or was rejected due to an `ERROR_SIGNATURE` framing shift, the bootloader dropped back to `CMD:>`.
+   - The premature `'e'` command instructed the bootloader to jump to address `0x00000000` (`system_app_boot()`) where invalid or blank instructions remained in IMEM.
+2. **Double Exception in Trap Handler:**
+   - The invalid instructions caused the CPU to trap.
+   - When jumping to the bootloader's trap handler (`0xFFE006A4`), the stack pointer had been decremented or was pointing into unmapped memory (`0x0001000C` - just above 64 KB IMEM boundary).
+   - Executing `sw ra, 76(sp)` at `0xFFE006A8` triggered a Store Access Fault (`mcause = 0x7`, `mtval = 0x0001000C`).
+3. **Outdated Application Binary in Bin Directory:**
+   - The compiled `demo_vga_doom.bin` in `GEMMrvStudio/example/bin/` was outdated and had not been synchronized with the latest compilation.
+
+### Fix Implemented
+1. **Robust Handshake in `gemm_dashboard.py`:**
+   - Pre-sends `b" \r\n"` to abort the 8-second countdown and obtain the `CMD:>` prompt cleanly.
+   - Issues `u` and verifies `"Awaiting"` state before streaming.
+   - Transmits data in 256-byte chunks with paced pacing (`10 ms`).
+   - Polls and verifies the bootloader's `"OK"` response before sending `'e'`. If `"OK"` is not received, `'e'` is never sent, preventing any invalid memory execution.
+2. **Re-packaged Fresh Binary:**
+   - Re-compiled `demo_vga_doom` and packaged `demo_vga_doom.bin` (3700 bytes, `sp = 0x80010000`, checksum `0xD067C5C8`).
+
+---
+
+## 7. Verification Checklist
 
 1. **VGA Output:**
    - 640x480 @ 60 Hz sync active.
@@ -214,3 +246,4 @@ Both issues have been investigated down to their exact hardware/firmware root ca
    - Type keys on the USB keyboard.
    - Scancodes and ASCII characters are printed to `COM10`.
    - 4x4 colored blocks are drawn at the cursor position on the VGA screen.
+
