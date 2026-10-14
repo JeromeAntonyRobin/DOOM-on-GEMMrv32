@@ -1,0 +1,77 @@
+# build artifacts
+build/
+.Xil/
+*.bin
+*.coe
+*.mem
+*.mif
+*.o
+*.elf
+*.asm
+*.out
+*.hex
+*_image.vhd
+*_wrapper.v
+*.json
+*.cf
+*.dSYM
+
+# keep default VHDL memory images
+!rtl/core/*_image.vhd
+
+# logs and dumps
+*.gdb*
+*.log
+*.vcd
+*.fst
+*.ghw
+
+# host executables
+sw/image_gen/image_gen
+*.exe
+
+# riscv-arch-test artifacts
+__pycache__
+riscof_work
+
+# temporary files and folders
+*.bak
+*.tmp
+~*
+
+# generated documentation stuff
+/docs/doxygen_build/
+/docs/public/
+temp/
+
+# Local test runner scripts & plan documents (do not track/push)
+run_baremetal_ai.py
+run_tflm_hello.py
+Edge_AI_MCU_Plan.md
+150MHz_Interconnect_Plan.md
+*.jou
+*.tcl
+auto_run_benchmark.py
+convert_stage2.py
+decode*.py
+decompile.py
+do_upload.py
+full_stage2_test.py
+hw_runner.py
+ila_dump.csv
+interactive_test*.py
+listen_raw.py
+manual_*.py
+patch*.py
+quick_test.py
+read_uart*.py
+test*.py
+test.s
+boot_it.sh
+build_and_test.sh
+flash_*.sh
+full_rebuild*.sh
+run_linux.sh
+wait_*.sh
+bootlog.txt
+flash_log*.txt

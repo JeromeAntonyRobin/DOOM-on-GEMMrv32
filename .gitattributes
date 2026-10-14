@@ -1,0 +1,46 @@
+# Default line endings
+* text=auto eol=lf
+
+# -------------------------------------------------------------
+# Upstream NEORV32 Components (Marked as vendored)
+# -------------------------------------------------------------
+docs/**                       linguist-vendored
+sim/**                        linguist-vendored
+rtl/core/**                   linguist-vendored
+rtl/system_integration/**     linguist-vendored
+rtl/test_setups/**            linguist-vendored
+rtl/top_templates/**          linguist-vendored
+sw/bootloader/**              linguist-vendored
+sw/common/**                  linguist-vendored
+sw/image_gen/**               linguist-vendored
+sw/ocd-firmware/**            linguist-vendored
+sw/openocd/**                 linguist-vendored
+sw/svd/**                     linguist-vendored
+sw/lib/**                     linguist-vendored
+sw/example/**                 linguist-vendored
+
+# -------------------------------------------------------------
+# GEMMrv32 Project Code (Explicitly Un-vendored / Ours)
+# -------------------------------------------------------------
+# Docs
+docs/figures/gemm_architecture.png       linguist-vendored=false
+
+# RTL Coprocessor & Interconnect
+rtl/core/neorv32_cfs.vhd                 linguist-vendored=false
+rtl/core/neorv32_memory_crossbar.vhd     linguist-vendored=false
+rtl/core/neorv32_wide_bram.vhd           linguist-vendored=false
+rtl/core/neorv32_top.vhd                 linguist-vendored=false
+
+# Software Libraries & Linker
+sw/common/neorv32.ld                     linguist-vendored=false
+sw/lib/source/neorv32_newlib.c           linguist-vendored=false
+
+# Examples & AI Accelerator Engines
+sw/example/gemm_lib/**                   linguist-vendored=false
+sw/example/demo_gemm/**                  linguist-vendored=false
+sw/example/demo_lenet/**                 linguist-vendored=false
+
+# Bare-metal TFLite Micro port & custom files
+sw/example/tflm_tree/build_tflm.py       linguist-vendored=false
+sw/example/tflm_tree/Makefile            linguist-vendored=false
+sw/example/tflm_tree/tensorflow/lite/micro/system_setup.cpp linguist-vendored=false
