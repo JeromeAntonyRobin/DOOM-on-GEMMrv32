@@ -1,7 +1,11 @@
-# build artifacts
+# Build artifacts
 build/
+**/build/
+!sw/basys/build/
+sw/basys/build/*
+!sw/basys/build/*.bit
+!sw/basys/build/*.bin
 .Xil/
-*.bin
 *.coe
 *.mem
 *.mif
@@ -16,41 +20,57 @@ build/
 *.cf
 *.dSYM
 
-# keep default VHDL memory images
+# Keep default VHDL memory images
 !rtl/core/*_image.vhd
 
-# logs and dumps
+# Track verified FPGA bitstream binaries (explicitly allowed)
+!*.bit
+!sw/basys/build/*.bit
+!sw/basys/build/*.bin
+
+# Track Vivado TCL scripts
+!sw/basys/*.tcl
+!rtl/**/*.tcl
+
+# EDA logs and transient dumps
 *.gdb*
 *.log
+*.jou
+*.backup.jou
+*.backup.log
 *.vcd
 *.fst
 *.ghw
+*.str
+*.pb
+dfx_runtime.txt
+clockInfo.txt
 
-# host executables
+# Host executables
 sw/image_gen/image_gen
 *.exe
 
-# riscv-arch-test artifacts
-__pycache__
-riscof_work
+# Python
+__pycache__/
+*.py[cod]
+riscof_work/
 
-# temporary files and folders
+# Temporary files and scratch folders
 *.bak
 *.tmp
 ~*
-
-# generated documentation stuff
-/docs/doxygen_build/
-/docs/public/
+scratch/
 temp/
 
-# Local test runner scripts & plan documents (do not track/push)
+# Generated documentation
+/docs/doxygen_build/
+/docs/public/
+
+# Local test runner scripts (do not track)
 run_baremetal_ai.py
 run_tflm_hello.py
 Edge_AI_MCU_Plan.md
 150MHz_Interconnect_Plan.md
-*.jou
-*.tcl
 auto_run_benchmark.py
 convert_stage2.py
 decode*.py
