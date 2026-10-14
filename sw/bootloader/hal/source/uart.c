@@ -98,6 +98,7 @@ static int s_stream_first_byte = 1;
 int uart_setup(void) {
 
 #if (UART_EN == 1)
+  neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE); // Disable interrupts during streaming
   s_stream_first_byte = 1;
   if (neorv32_uart_available(NEORV32_UART0)) {
     while (neorv32_uart_char_received(NEORV32_UART0)) {

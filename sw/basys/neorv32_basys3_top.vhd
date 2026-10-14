@@ -145,6 +145,8 @@ begin
     IO_GPIO_NUM      => 8,
     IO_CLINT_EN      => true,
     IO_UART0_EN      => true,
+    IO_UART0_RX_FIFO => 64,                -- 64-byte RX FIFO to prevent dropouts during streaming
+    IO_UART0_TX_FIFO => 64,                -- 64-byte TX FIFO
     XBUS_EN          => true,              -- External Bus for VGA & PS/2
     XBUS_TIMEOUT     => 128
   )
