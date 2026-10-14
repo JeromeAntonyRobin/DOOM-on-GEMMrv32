@@ -232,18 +232,107 @@ Both issues have been investigated down to their exact hardware/firmware root ca
 
 ---
 
-## 7. Verification Checklist
+## 7. Issue 5: UART Streaming Overrun & Dropped Bytes
+
+### Symptoms
+- Firmware upload in bootloader stalled indefinitely or reported upload failure without returning `OK`.
+- The bootloader remained blocked inside `system_app_load` waiting for the remaining expected bytes.
+
+### Root Cause Analysis
+1. **1-Byte Hardware FIFO:**
+   - In `sw/basys/neorv32_basys3_top.vhd`, `IO_UART0_RX_FIFO` was omitted from the top-level generics, defaulting to `1`.
+   - The hardware UART receiver had only a 1-byte buffer before new incoming characters triggered `UART_CTRL_RX_OVER` and were permanently discarded.
+2. **CLINT Machine Timer Interrupt Preemption:**
+   - In `system.c`, `system_setup()` enabled machine timer interrupts (`CSR_MIE_MTIE`) to toggle a heartbeat LED every 250 ms.
+   - During a ~2.5 second UART stream upload, the timer interrupt triggered ~10 times.
+   - Each interrupt saved and restored 20 registers to the stack. With a 1-byte FIFO, preempting the CPU for ~100 clock cycles during continuous UART stream reception caused incoming bytes to overrun and be lost.
+   - Consequently, the bootloader received fewer than `header.size` bytes and hung waiting for the missing bytes.
+
+### Fix Implemented
+1. **64-Byte Hardware FIFOs:**
+   - In `sw/basys/neorv32_basys3_top.vhd`, parameterized `IO_UART0_RX_FIFO => 64` and `IO_UART0_TX_FIFO => 64`.
+2. **Interrupt Suppression during Streaming:**
+   - In `sw/bootloader/hal/source/uart.c`, added `neorv32_cpu_csr_clr(CSR_MSTATUS, 1 << CSR_MSTATUS_MIE)` inside `uart_setup()` to disable timer interrupts while receiving firmware payloads.
+3. **Paced Chunk Streaming in Dashboard:**
+   - Configured `CHUNK_SIZE = 64` with 20 ms pacing in `gemm_dashboard.py`.
+4. **Autonomous Hardware Verification:**
+   - The bitstream was resynthesized and reprogrammed to the Basys 3 board.
+   - Streaming `demo_vga_doom.bin` (3700 bytes) completed in 2.38s, verified checksum, returned `OK\r\nCMD:>`, received `e`, and booted the workstation application cleanly.
+
+---
+
+## 8. Verification Checklist
 
 1. **VGA Output:**
    - 640x480 @ 60 Hz sync active.
    - 8 solid color bars (Black, Blue, Green, Cyan, Red, Magenta, Yellow, White) rendered across screen.
    - White outer border and center crosshair rendered.
 2. **UART Console (`COM10` @ 19200 baud):**
-   - Emits startup banner once without looping.
-   - Prints `[VGA] Color bars rendered successfully!`.
-   - Prints `[PS/2] Ready for keyboard input...`.
+   - Emits startup banner once without looping:
+     ```text
+     ==============================================
+        GEMMrv32 Standalone Workstation Active     
+        VGA Resolution: 160x120 -> 640x480 @ 60Hz  
+        PS/2 Keyboard Controller Online            
+     ==============================================
+     [VGA] Color bars rendered successfully!
+     [PS/2] Ready for keyboard input...
+     ```
 3. **PS/2 Keyboard:**
    - Type keys on the USB keyboard.
    - Scancodes and ASCII characters are printed to `COM10`.
    - 4x4 colored blocks are drawn at the cursor position on the VGA screen.
+
+---
+
+## 9. Issue 6: Consecutive Uploads & The PROG Button vs Processor Reset (`btnC`)
+
+### Symptoms
+- The first firmware upload works fine.
+- When the user presses the board's `PROG` button to reset and upload a second or third binary, the VGA monitor shuts off, and serial uploads fail.
+
+### Root Cause Analysis
+1. **`PROG` Button Function on Basys 3:**
+   - The red push button labeled `PROG` is directly connected to the Artix-7 FPGA `PROG_B` dedicated configuration pin.
+   - Pressing `PROG` forces the FPGA to clear its volatile internal SRAM configuration (wiping the bitstream loaded via JTAG).
+   - The FPGA then immediately attempts to reload a bitstream from external non-volatile SPI Flash. Because the SPI Flash was unprogrammed, the configuration fails, `DONE` LED turns off, the VGA DAC is unpowered, and the monitor turns off.
+2. **True Processor Reset (`btnC`):**
+   - The NEORV32 soft-core reset signal is mapped in `basys3.xdc` to `PACKAGE_PIN U18 [get_ports btn_reset]`.
+   - On the Basys 3 board, pin `U18` is **`btnC`** (the center push button of the 5-way directional pad).
+   - Pressing `btnC` resets the NEORV32 processor back to the bootloader ROM without erasing the FPGA fabric or turning off the VGA output.
+3. **Dashboard Multi-Upload Support:**
+   - When an application (`demo_vga_doom`) is running, it does not respond to bootloader commands.
+   - Updated `gemm_dashboard.py` flasher to detect if a program is active, prompt the user:
+     `[PROGRAMMER] If a program is running, press btnC (Center Button) on Basys 3 to return to bootloader...`
+     and wait up to 6 seconds for the bootloader prompt before safely streaming the binary.
+
+---
+
+## 10. Issue 7: USB Keyboard Enumeration, Mode Jumper `JP1`, and Status LED `LD16`
+
+### Symptoms
+- Generic USB keyboard connected to host port `J2` does not produce scancodes.
+- The `LD16` LED is pulsing/blinking slowly.
+
+### Root Cause Analysis
+1. **Basys 3 USB Host Architecture (Reference Manual Page 5):**
+   - The Basys 3 utilizes an onboard Microchip PIC24FJ128 auxiliary microcontroller to manage the Type-A USB host port `J2`.
+   - The PIC24 serves two mutually exclusive functions:
+     - **Configuration Mode:** Used to program the FPGA from a USB thumb drive.
+     - **Application Mode (USB HID Host):** Translates USB keyboard/mouse packets into standard PS/2 signals (`ps2_clk` on `C17`, `ps2_data` on `B17`).
+2. **Behavior of `LD16` ("BUSY" LED):**
+   - Per page 5 of the Digilent reference manual:
+     - **Slow pulse/fading:** The auxiliary microcontroller is waiting for a configuration medium (USB flash drive) to be plugged in.
+     - **Off:** The FPGA is configured (`DONE = HIGH`), and the microcontroller has transitioned to **USB HID Host mode**.
+3. **The Mode Jumper `JP1`:**
+   - If jumper `JP1` is placed in the **`USB`** position:
+     - The PIC24 remains indefinitely in USB Configuration Mode, waiting for a FAT32 thumb drive with a `.bit` file.
+     - When a keyboard is plugged in, the PIC24 rejects it as a storage device, pulses `LD16`, and **never enters HID Host mode**.
+   - If jumper `JP1` is placed in the **`JTAG`** position (the two center pins):
+     - The PIC24 ignores port `J2` during boot.
+     - Once Vivado programs the FPGA via JTAG, the FPGA `DONE` pin asserts high.
+     - The PIC24 detects `DONE = HIGH`, turns `LD16` completely OFF, and enters USB HID Host mode.
+     - Attached generic USB keyboards are enumerated, and keypresses are transmitted over PS/2 pins `C17` and `B17`.
+
+
 
