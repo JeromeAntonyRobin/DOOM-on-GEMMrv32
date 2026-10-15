@@ -40,9 +40,9 @@ GEMMrv32 transforms the Digilent Basys 3 FPGA into a **fully autonomous 32-bit R
 ```
 
 * **Processor Core**: NEORV32 RV32IM CPU with `Zicsr` and `Zifencei` extensions running at 50 MHz.
-* **Instruction Memory (IMEM)**: 64 KB Block RAM (`0x00000000` - `0x0000FFFF`).
-* **Data Memory (DMEM)**: 64 KB Block RAM (`0x80000000` - `0x8000FFFF`).
-* **Graphics Subsystem**: Dual-port 19,200-byte VRAM (`0x90000000`) with 4x hardware pixel upscaler outputting **640x480 @ 60 Hz 12-bit RGB** (4096 colors).
+* **Instruction Memory (IMEM)**: 96 KB Block RAM (`0x00000000` - `0x00017FFF`).
+* **Data Memory (DMEM)**: 96 KB Block RAM (`0x80000000` - `0x80017FFF`).
+* **Graphics Subsystem**: Dual-port 19,200-byte Distributed LUTRAM VRAM (`0x90000000`) with 4x hardware pixel upscaler outputting **640x480 @ 60 Hz 12-bit RGB** (4096 colors).
 * **Hardware GPU Coprocessor**: Custom Functions Subsystem (CFS) featuring an **8x8 Systolic Multiply-Accumulate (MAC) array** and a **256-bit wide DMA engine** (`0xFFEA0000`).
 * **User Input**: Dual-mode input combining Host PC keyboard control over USB-UART with the onboard Basys 3 PIC24 PS/2 bridge (`0x90020000`).
 
