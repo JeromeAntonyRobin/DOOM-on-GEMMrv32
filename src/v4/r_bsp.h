@@ -12,6 +12,7 @@ int  R_PointOnSide(fixed_t x, fixed_t y, const node_t *node);
 bool R_CheckBBox(const fixed_t bspcoord[4]);
 void R_RenderBSPNode(int bspnum);
 void R_Subsector(int num);
+void R_RenderWorld(void);
 
 // View Transformation Context
 extern fixed_t viewx, viewy, viewz;

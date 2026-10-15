@@ -170,10 +170,7 @@ static void render_doom_v3_frame(void) {
     R_ClearDrawSegs();
     R_ClearClipSegs();
 
-    // 2. Clean 100% Backdrop Fill (Eliminates all frame retention and ghosting)
-    R_ClearBackdrop();
-
-    // 3. Set Camera Context from Player Mobj
+    // 2. Set Camera Context from Player Mobj
     if (player_mobj) {
         viewx = player_mobj->x;
         viewy = player_mobj->y;
@@ -182,10 +179,10 @@ static void render_doom_v3_frame(void) {
     viewcos = get_cos(player_angle_idx);
     viewsin = get_sin(player_angle_idx);
 
-    // 4. Front-to-Back Recursive BSP Tree Traversal & Linedef Rasterization
-    R_RenderBSPNode(0);
+    // 3. Render 3D World Geometry Strictly Front-to-Back (Walls, Portals, Flats)
+    R_RenderWorld();
 
-    // 5. Render Dynamic 2.5D Mobjs (Imps, Demons, Shotgun Guys) via GEMM Coprocessor
+    // 4. Render Dynamic 2.5D Mobjs (Imps, Demons, Shotgun Guys) via GEMM Coprocessor
     R_DrawMasked();
     gemm_batches++;
 

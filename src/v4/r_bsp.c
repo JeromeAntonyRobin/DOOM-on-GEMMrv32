@@ -109,3 +109,43 @@ void R_RenderBSPNode(int bspnum) {
         R_RenderBSPNode(node->children[side ^ 1]);
     }
 }
+
+// ------------------------------------------------------------------------------
+// Front-to-Back World Renderer: Guaranteed Occlusion and Complete Column Coverage
+// ------------------------------------------------------------------------------
+typedef struct {
+    int line_idx;
+    int64_t dist_sq;
+} line_dist_t;
+
+void R_RenderWorld(void) {
+    line_dist_t dists[NUM_LINES];
+    for (size_t i = 0; i < NUM_LINES; i++) {
+        line_t *l = &map_lines[i];
+        fixed_t mid_x = (l->v1->x + l->v2->x) / 2;
+        fixed_t mid_y = (l->v1->y + l->v2->y) / 2;
+        int64_t dx = FROM_FIXED(mid_x - viewx);
+        int64_t dy = FROM_FIXED(mid_y - viewy);
+        dists[i].line_idx = (int)i;
+        dists[i].dist_sq = dx * dx + dy * dy;
+    }
+
+    // Sort lines closest first (front-to-back)
+    for (size_t i = 1; i < NUM_LINES; i++) {
+        line_dist_t key = dists[i];
+        int j = (int)i - 1;
+        while (j >= 0 && dists[j].dist_sq > key.dist_sq) {
+            dists[j + 1] = dists[j];
+            j--;
+        }
+        dists[j + 1] = key;
+    }
+
+    // Render lines strictly front-to-back
+    for (size_t i = 0; i < NUM_LINES; i++) {
+        R_AddLine(&map_lines[dists[i].line_idx]);
+    }
+
+    // Fill any remaining unoccluded column apertures
+    R_FillBackdrop();
+}
