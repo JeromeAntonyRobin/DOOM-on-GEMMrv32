@@ -7,10 +7,7 @@ int16_t ceilingclip[SCREEN_W];
 int16_t floorclip[SCREEN_W];
 fixed_t wall_dist_buffer[SCREEN_W];
 
-#define VIEWPORT_H 168 // 320x168 3D Viewport, bottom 32 lines for Status Bar HUD
-#define CENTER_X   (SCREEN_W / 2)
-#define CENTER_Y   (VIEWPORT_H / 2)
-#define FOCAL_LEN  160
+
 
 void R_InitSegs(void) {
     R_ClearDrawSegs();

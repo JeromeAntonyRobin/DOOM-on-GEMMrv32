@@ -946,14 +946,14 @@ void draw_authentic_patch_2x(volatile uint8_t *vram, const doom_patch_t *patch, 
             int dest_y = py + topdelta * 2;
             for (int i = 0; i < length; i++, dest_y += 2) {
                 uint8_t color = src[i];
-                if (dest_y >= 0 && dest_y < 168) {
+                if (dest_y >= 0 && dest_y < VIEWPORT_H) {
                     if (scr_x >= 0 && scr_x < SCREEN_W) {
                         vram[dest_y * SCREEN_W + scr_x] = color;
-                        if (dest_y + 1 < 168) vram[(dest_y + 1) * SCREEN_W + scr_x] = color;
+                        if (dest_y + 1 < VIEWPORT_H) vram[(dest_y + 1) * SCREEN_W + scr_x] = color;
                     }
                     if (scr_x + 1 >= 0 && scr_x + 1 < SCREEN_W) {
                         vram[dest_y * SCREEN_W + (scr_x + 1)] = color;
-                        if (dest_y + 1 < 168) vram[(dest_y + 1) * SCREEN_W + (scr_x + 1)] = color;
+                        if (dest_y + 1 < VIEWPORT_H) vram[(dest_y + 1) * SCREEN_W + (scr_x + 1)] = color;
                     }
                 }
             }
@@ -998,7 +998,7 @@ void draw_authentic_patch_scaled(volatile uint8_t *vram, const doom_patch_t *pat
             }
 
             int dest_y0 = (raw_dest_y0 < 0) ? 0 : raw_dest_y0;
-            int dest_y1 = (raw_dest_y1 > 168) ? 168 : raw_dest_y1;
+            int dest_y1 = (raw_dest_y1 > VIEWPORT_H) ? VIEWPORT_H : raw_dest_y1;
 
             for (int dy = dest_y0; dy < dest_y1; dy++) {
                 int src_i = ((dy - raw_dest_y0) * length) / raw_post_h;

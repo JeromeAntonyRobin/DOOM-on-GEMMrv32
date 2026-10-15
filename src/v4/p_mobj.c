@@ -14,10 +14,7 @@ extern int player_health;
 extern int player_ammo;
 extern int player_score;
 
-#define VIEWPORT_H 168
-#define CENTER_X   (SCREEN_W / 2)
-#define CENTER_Y   (VIEWPORT_H / 2)
-#define FOCAL_LEN  160
+
 
 // ------------------------------------------------------------------------------
 // Initialize Mobjs from Map Spawn Table

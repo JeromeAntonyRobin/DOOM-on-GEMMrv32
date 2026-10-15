@@ -10,10 +10,16 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Screen Dimensions (Authentic 1994 PC DOOM 2 VGA Mode 13h Native Resolution)
-#define SCREEN_W            320
-#define SCREEN_H            200
-#define VRAM_BYTES          (SCREEN_W * SCREEN_H) // 64,000 bytes at 8bpp (256 colors)
+// Screen Dimensions (Authentic Basys 3 160x120 Framebuffer @ 8bpp upscaled 4x)
+#define SCREEN_W            160
+#define SCREEN_H            120
+#define VRAM_BYTES          (SCREEN_W * SCREEN_H) // 19,200 bytes at 8bpp (256 colors)
+
+#define VIEWPORT_H         100 // Top 100 scanlines (0..99) for 3D world
+#define STATUS_BAR_H        20 // Bottom 20 scanlines (100..119) for HUD
+#define CENTER_X           (SCREEN_W / 2)   // 80
+#define CENTER_Y           (VIEWPORT_H / 2) // 50
+#define FOCAL_LEN          80               // 80 units for ~90-deg FOV across 160 pixels
 
 // 16.16 Fixed-Point Arithmetic Definitions
 typedef int32_t fixed_t;

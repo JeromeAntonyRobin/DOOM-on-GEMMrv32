@@ -16,8 +16,7 @@
 #include "gemm_lib/gemmrv_gpu.h"
 #include <string.h>
 
-#define VIEWPORT_H         168 // 3D world takes top 168 scanlines (0..167)
-#define STATUS_BAR_H        32 // Bottom 32 scanlines (168..199)
+
 
 // Game Stats
 int player_health = 100;
@@ -48,10 +47,8 @@ static inline fixed_t get_sin(int idx) { return sin_table[idx & 63]; }
 static inline fixed_t get_cos(int idx) { return sin_table[(idx + 16) & 63]; }
 
 // ==============================================================================
-// Render Status Bar HUD (Bottom 32 scanlines: y = 168..199)
 // ==============================================================================
-// ==============================================================================
-// Render Status Bar HUD (Bottom 32 scanlines: y = 168..199)
+// Render Status Bar HUD (Bottom 20 scanlines: y = 100..119)
 // ==============================================================================
 static void render_status_bar(volatile uint8_t *vram) {
     // 1. Draw Industrial Grey Beveled Plate using authentic DOOM 2 grey ramp (palette indices 96..111)
@@ -68,24 +65,24 @@ static void render_status_bar(volatile uint8_t *vram) {
 
     // 2. Draw Authentic Doomguy Face in Center (STFST00 / STFEVL0)
     const doom_patch_t *face = (muzzle_flash > 0) ? &patch_stfevl0 : &patch_stfst00;
-    int face_x = (SCREEN_W - face->width) / 2;
-    int face_y = VIEWPORT_H + 1;
+    int face_x = (SCREEN_W - face->width) / 2; // (160 - 24) / 2 = 68
+    int face_y = VIEWPORT_H;                   // y = 100
     draw_authentic_patch(vram, face, face_x, face_y);
 
-    // 3. Ammo Bar on Left (x = 20..84, y = 180..187)
-    int ammo_fill = (player_ammo * 64) / 50;
-    for (int y = VIEWPORT_H + 12; y <= VIEWPORT_H + 19; y++) {
-        for (int x = 20; x <= 84; x++) {
-            uint8_t col = (x - 20 <= ammo_fill) ? 224 : 0; // Gold amber ammo bar (DOOM 2 index 224)
+    // 3. Ammo Bar on Left (x = 8..48, y = 106..113)
+    int ammo_fill = (player_ammo * 40) / 50;
+    for (int y = VIEWPORT_H + 6; y <= VIEWPORT_H + 13; y++) {
+        for (int x = 8; x <= 48; x++) {
+            uint8_t col = (x - 8 <= ammo_fill) ? 224 : 0; // Gold amber ammo bar (DOOM 2 index 224)
             vram[y * SCREEN_W + x] = col;
         }
     }
 
-    // 4. Health Bar on Right (x = 236..300, y = 180..187)
-    int health_fill = (player_health * 64) / 100;
-    for (int y = VIEWPORT_H + 12; y <= VIEWPORT_H + 19; y++) {
-        for (int x = 236; x <= 300; x++) {
-            uint8_t col = (x - 236 <= health_fill) ? 176 : 0; // Blood red health bar (DOOM 2 index 176)
+    // 4. Health Bar on Right (x = 112..152, y = 106..113)
+    int health_fill = (player_health * 40) / 100;
+    for (int y = VIEWPORT_H + 6; y <= VIEWPORT_H + 13; y++) {
+        for (int x = 112; x <= 152; x++) {
+            uint8_t col = (x - 112 <= health_fill) ? 176 : 0; // Blood red health bar (DOOM 2 index 176)
             vram[y * SCREEN_W + x] = col;
         }
     }
@@ -96,21 +93,21 @@ static void render_status_bar(volatile uint8_t *vram) {
 // ==============================================================================
 static void render_weapon(volatile uint8_t *vram) {
     const doom_patch_t *wpn = &patch_sht2a0;
-    int wpn_w = wpn->width * 2;
-    int wpn_h = wpn->height * 2;
-    int wpn_x = (SCREEN_W - wpn_w) / 2;
-    int wpn_y = VIEWPORT_H - wpn_h + (walk_bob ? 4 : 0);
-    draw_authentic_patch_2x(vram, wpn, wpn_x, wpn_y);
+    int wpn_w = wpn->width;  // 59 pixels wide
+    int wpn_h = wpn->height; // 55 pixels high
+    int wpn_x = (SCREEN_W - wpn_w) / 2; // (160 - 59) / 2 = 50
+    int wpn_y = VIEWPORT_H - wpn_h + (walk_bob ? 2 : 0); // 100 - 55 = 45
+    draw_authentic_patch(vram, wpn, wpn_x, wpn_y);
 
     if (muzzle_flash > 0) {
         // Draw dual muzzle flash plumes over twin barrels (authentic DOOM 2 fire blast)
         int barrel_cx = wpn_x + (wpn_w / 2);
-        int barrel_y = wpn_y - 8;
-        for (int dy = -16; dy <= 0; dy++) {
-            for (int dx = -36; dx <= 36; dx++) {
+        int barrel_y = wpn_y - 4;
+        for (int dy = -8; dy <= 0; dy++) {
+            for (int dx = -18; dx <= 18; dx++) {
                 int dist_sq = dx * dx + dy * dy * 3;
-                if (dist_sq < 600) {
-                    uint8_t col = (dist_sq < 120) ? 4 : ((dist_sq < 350) ? 224 : 176);
+                if (dist_sq < 150) {
+                    uint8_t col = (dist_sq < 30) ? 4 : ((dist_sq < 90) ? 224 : 176);
                     put_pixel(vram, barrel_cx + dx, barrel_y + dy, col);
                 }
             }
@@ -119,7 +116,7 @@ static void render_weapon(volatile uint8_t *vram) {
 }
 
 // ==============================================================================
-// Render 2D Minimap Overlay in Top-Left Corner
+// Render 2D Minimap Overlay in Top-Left Corner (32x32)
 // ==============================================================================
 static void render_minimap(volatile uint8_t *vram) {
     if (!show_minimap) return;
@@ -127,10 +124,10 @@ static void render_minimap(volatile uint8_t *vram) {
     // Draw lines of the level (North is UP)
     for (size_t i = 0; i < NUM_LINES; i++) {
         line_t *line = &map_lines[i];
-        int x1 = (FROM_FIXED(line->v1->x) + 380) / 16 + 4;
-        int y1 = 55 - (FROM_FIXED(line->v1->y) + 200) / 16;
-        int x2 = (FROM_FIXED(line->v2->x) + 380) / 16 + 4;
-        int y2 = 55 - (FROM_FIXED(line->v2->y) + 200) / 16;
+        int x1 = (FROM_FIXED(line->v1->x) + 350) / 25 + 2;
+        int y1 = 34 - (FROM_FIXED(line->v1->y) + 200) / 25;
+        int x2 = (FROM_FIXED(line->v2->x) + 350) / 25 + 2;
+        int y2 = 34 - (FROM_FIXED(line->v2->y) + 200) / 25;
 
         int dx = (x2 > x1) ? (x2 - x1) : (x1 - x2);
         int dy = (y2 > y1) ? (y2 - y1) : (y1 - y2);
@@ -149,11 +146,11 @@ static void render_minimap(volatile uint8_t *vram) {
     }
 
     // Draw player position and heading indicator (North is UP)
-    int px = (FROM_FIXED(viewx) + 380) / 16 + 4;
-    int py = 55 - (FROM_FIXED(viewy) + 200) / 16;
+    int px = (FROM_FIXED(viewx) + 350) / 25 + 2;
+    int py = 34 - (FROM_FIXED(viewy) + 200) / 25;
     put_pixel(vram, px, py, 4); // White dot
-    int dir_x = px + FROM_FIXED(viewcos * 4);
-    int dir_y = py - FROM_FIXED(viewsin * 4); // Negative Y on screen is UP (North)
+    int dir_x = px + FROM_FIXED(viewcos * 3);
+    int dir_y = py - FROM_FIXED(viewsin * 3); // Negative Y on screen is UP (North)
     put_pixel(vram, dir_x, dir_y, 176); // Red tick
 }
 
@@ -277,13 +274,13 @@ int main(void) {
     neorv32_uart0_setup(19200, 0);
 
     neorv32_uart0_printf("\n======================================================\n");
-    neorv32_uart0_printf("   GEMMrv32 DOOM 2: Native 320x200 @ 8bpp Mode 13h     \n");
+    neorv32_uart0_printf("   GEMMrv32 DOOM 2: Native 160x120 @ 8bpp Mode          \n");
     neorv32_uart0_printf("   Architecture: 256-Color VGA, BSP Tree, Super Shotgun\n");
     neorv32_uart0_printf("   Controls: W=Forward, S=Back, A=Left, D=Right       \n");
     neorv32_uart0_printf("             SPACE=Fire Super Shotgun, M=Map, R=Reset \n");
     neorv32_uart0_printf("======================================================\n\n");
 
-    // 0. Clear 64,000-byte VRAM to black (byte-by-byte for hardware BRAM interface)
+    // 0. Clear 19,200-byte VRAM to black (byte-by-byte for hardware BRAM interface)
     volatile uint8_t *vram_init = (volatile uint8_t *)VGA_VRAM_BASE;
     for (int i = 0; i < VRAM_BYTES; i++) {
         vram_init[i] = 0;
@@ -297,9 +294,9 @@ int main(void) {
     P_InitMobjs();
     neorv32_uart0_printf("[MAP] DOOM 2 MAP01 multi-height BSP world & entities spawned!\n");
 
-    // 4. Render Initial Native 320x200 Frame
+    // 4. Render Initial Native 160x120 Frame
     render_doom_v3_frame();
-    neorv32_uart0_printf("[DOOM 2] First Native 320x200 Mode 13h frame rendered successfully!\n");
+    neorv32_uart0_printf("[DOOM 2] First Native 160x120 Mode frame rendered successfully!\n");
 
     int last_report = 0;
 
