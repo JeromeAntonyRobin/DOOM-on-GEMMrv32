@@ -1,0 +1,4 @@
+[submodule "hardware/gemmrv32"]
+	path = hardware/gemmrv32
+	url = https://github.com/The-Silis-Foundation/GEMMrv32.git
+	branch = basys3

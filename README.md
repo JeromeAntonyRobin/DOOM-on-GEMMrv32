@@ -1,4 +1,4 @@
-﻿# DOOM on GEMMrv32: Bare-Metal 3D DOOM on Digilent Basys 3 FPGA
+# DOOM on GEMMrv32: Bare-Metal 3D DOOM on Digilent Basys 3 FPGA
 
 [![Target FPGA](https://img.shields.io/badge/FPGA-Digilent%20Basys%203%20(XC7A35T)-orange?style=flat-square)](https://digilent.com/reference/programmable-logic/basys-3/start)
 [![ISA](https://img.shields.io/badge/ISA-RV32IM%20RISC--V-green?style=flat-square)](https://riscv.org)
@@ -39,6 +39,8 @@ DOOM-on-GEMMrv32/
 │   ├── DOOM_ENGINE_ARCHITECTURE.md    # 3D raycasting DDA math, textures, & BSP traversal
 │   ├── HARDWARE_SPECIFICATION.md      # Memory map, GEMM CFS coprocessor, & VGA core
 │   └── DOOM_GLITCH_ANALYSIS.md        # The 19.2 KB boundary & Hall-of-Mirrors glitch resolution
+│
+├── hardware/gemmrv32/      # Git submodule: Basys 3 SoC HDL from The-Silis-Foundation/GEMMrv32 (branch: basys3)
 │
 ├── sw/                     # Minimal NEORV32 C Runtime & Linker Scripts
 │   ├── common/             # Linker script (neorv32.ld), crt0.S startup, common.mk
