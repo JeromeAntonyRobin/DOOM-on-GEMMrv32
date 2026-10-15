@@ -96,19 +96,21 @@ static void render_status_bar(volatile uint8_t *vram) {
 // ==============================================================================
 static void render_weapon(volatile uint8_t *vram) {
     const doom_patch_t *wpn = &patch_sht2a0;
-    int wpn_x = (SCREEN_W - wpn->width) / 2;
-    int wpn_y = VIEWPORT_H - wpn->height + (walk_bob ? 3 : 0);
-    draw_authentic_patch(vram, wpn, wpn_x, wpn_y);
+    int wpn_w = wpn->width * 2;
+    int wpn_h = wpn->height * 2;
+    int wpn_x = (SCREEN_W - wpn_w) / 2;
+    int wpn_y = VIEWPORT_H - wpn_h + (walk_bob ? 4 : 0);
+    draw_authentic_patch_2x(vram, wpn, wpn_x, wpn_y);
 
     if (muzzle_flash > 0) {
         // Draw dual muzzle flash plumes over twin barrels (authentic DOOM 2 fire blast)
-        int barrel_cx = wpn_x + (wpn->width / 2);
-        int barrel_y = wpn_y - 6;
-        for (int dy = -10; dy <= 0; dy++) {
-            for (int dx = -24; dx <= 24; dx++) {
-                int dist_sq = dx * dx + dy * dy * 4;
-                if (dist_sq < 360) {
-                    uint8_t col = (dist_sq < 90) ? 4 : ((dist_sq < 220) ? 224 : 176);
+        int barrel_cx = wpn_x + (wpn_w / 2);
+        int barrel_y = wpn_y - 8;
+        for (int dy = -16; dy <= 0; dy++) {
+            for (int dx = -36; dx <= 36; dx++) {
+                int dist_sq = dx * dx + dy * dy * 3;
+                if (dist_sq < 600) {
+                    uint8_t col = (dist_sq < 120) ? 4 : ((dist_sq < 350) ? 224 : 176);
                     put_pixel(vram, barrel_cx + dx, barrel_y + dy, col);
                 }
             }
@@ -168,7 +170,10 @@ static void render_doom_v3_frame(void) {
     R_ClearDrawSegs();
     R_ClearClipSegs();
 
-    // 2. Set Camera Context from Player Mobj
+    // 2. Clean 100% Backdrop Fill (Eliminates all frame retention and ghosting)
+    R_ClearBackdrop();
+
+    // 3. Set Camera Context from Player Mobj
     if (player_mobj) {
         viewx = player_mobj->x;
         viewy = player_mobj->y;
@@ -177,13 +182,10 @@ static void render_doom_v3_frame(void) {
     viewcos = get_cos(player_angle_idx);
     viewsin = get_sin(player_angle_idx);
 
-    // 3. Front-to-Back Recursive BSP Tree Traversal & Linedef Rasterization
+    // 4. Front-to-Back Recursive BSP Tree Traversal & Linedef Rasterization
     R_RenderBSPNode(0);
 
-    // 4. Fill unoccluded column apertures (100% background coverage, zero-retention)
-    R_FillBackdrop();
-
-    // 4. Render Dynamic 2.5D Mobjs (Imps, Fireballs, Barrels) via GEMM Coprocessor
+    // 5. Render Dynamic 2.5D Mobjs (Imps, Demons, Shotgun Guys) via GEMM Coprocessor
     R_DrawMasked();
     gemm_batches++;
 
@@ -235,17 +237,17 @@ static void handle_input(char cmd) {
                 // Inflict massive buckshot damage across 20 pellets in wide cone
                 for (int i = 0; i < num_mobjs; i++) {
                     mobj_t *mo = &mobjs[i];
-                    if (mo->type == MT_IMP && mo->health > 0) {
+                    if (mo->type != MT_PLAYER && mo->health > 0) {
                         int d_x = FROM_FIXED(mo->x - viewx);
                         int d_y = FROM_FIXED(mo->y - viewy);
                         if (d_x * d_x + d_y * d_y < 500 * 500) {
                             mo->health -= 120; // Massive Super Shotgun blast!
                             if (mo->health <= 0) {
                                 mo->state = S_IMP_DIE1;
-                                neorv32_uart0_printf("[DOOM 2] Imp blasted to pieces!\n");
+                                neorv32_uart0_printf("[DOOM 2] Monster blasted to pieces!\n");
                             } else {
                                 mo->state = S_IMP_PAIN;
-                                neorv32_uart0_printf("[DOOM 2] Imp wounded! Remaining health: %d\n", mo->health);
+                                neorv32_uart0_printf("[DOOM 2] Monster wounded! Remaining health: %d\n", mo->health);
                             }
                         }
                     }
@@ -303,7 +305,6 @@ int main(void) {
     neorv32_uart0_printf("[DOOM 2] First Native 320x200 Mode 13h frame rendered successfully!\n");
 
     int last_report = 0;
-    neorv32_uart0_printf("[DEBUG] Entering main loop!\n");
 
     while (1) {
         // Poll UART0 (PC Keyboard) - Non-blocking character check!
@@ -328,7 +329,7 @@ int main(void) {
         render_doom_v3_frame();
         if (muzzle_flash > 0) muzzle_flash--;
 
-        if (frame_count <= 10 || frame_count - last_report >= 30) {
+        if (frame_count - last_report >= 30) {
             last_report = frame_count;
             neorv32_uart0_printf("[DOOM 2] Frame: %u | GEMM Batches: %u | Health: %d | Ammo: %d\n",
                 frame_count, gemm_batches, player_health, player_ammo);

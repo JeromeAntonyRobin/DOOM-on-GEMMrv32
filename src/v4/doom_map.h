@@ -258,18 +258,12 @@ typedef struct {
 static const mobj_spawn_t map_spawns[] __attribute__((unused)) = {
     // Player Spawn in Hangar
     { TO_FIXED(0), TO_FIXED(-100), TO_FIXED(0), MT_PLAYER, ANG90 },
-    // Imp Demon 1: Guarding the top of the stairs
+    // Imp Demon: Guarding the top of the stairs
     { TO_FIXED(0), TO_FIXED(180), TO_FIXED(32), MT_IMP, ANG270 },
-    // Imp Demon 2: Roaming the sunken toxic courtyard
-    { TO_FIXED(150), TO_FIXED(380), TO_FIXED(-32), MT_IMP, ANG180 },
-    // Imp Demon 3: Camping inside the Computer Room
-    { TO_FIXED(300), TO_FIXED(0), TO_FIXED(16), MT_IMP, ANG180 },
-    // Toxic Barrels near the stairs
-    { TO_FIXED(-60), TO_FIXED(80), TO_FIXED(0), MT_BARREL, 0 },
-    { TO_FIXED(60), TO_FIXED(80), TO_FIXED(0), MT_BARREL, 0 },
-    // Health Medkits in Computer Alcove
-    { TO_FIXED(350), TO_FIXED(-60), TO_FIXED(16), MT_MEDKIT, 0 },
-    { TO_FIXED(350), TO_FIXED(60), TO_FIXED(16), MT_MEDKIT, 0 }
+    // Pinky Demon: Roaming the sunken toxic courtyard
+    { TO_FIXED(150), TO_FIXED(380), TO_FIXED(-32), MT_DEMON, ANG180 },
+    // Shotgun Guy: Camping inside the Computer Room
+    { TO_FIXED(300), TO_FIXED(0), TO_FIXED(16), MT_SHOTGUNGUY, ANG180 }
 };
 
 #define NUM_SPAWNS (sizeof(map_spawns) / sizeof(map_spawns[0]))

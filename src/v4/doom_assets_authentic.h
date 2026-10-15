@@ -22,6 +22,7 @@ extern const uint8_t tex_startan3[4096];
 
 void setup_authentic_doom2_palette(void);
 void draw_authentic_patch(volatile uint8_t *vram, const doom_patch_t *patch, int x, int y);
+void draw_authentic_patch_2x(volatile uint8_t *vram, const doom_patch_t *patch, int x, int y);
 void draw_authentic_patch_scaled(volatile uint8_t *vram, const doom_patch_t *patch, int screenX, int screenY, int spr_w, int spr_h, fixed_t tz);
 
 #endif // DOOM_ASSETS_AUTHENTIC_H

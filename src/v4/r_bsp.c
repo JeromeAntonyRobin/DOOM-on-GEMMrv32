@@ -12,11 +12,28 @@ angle_t viewangle = 0;
 fixed_t viewcos = FP_ONE;
 fixed_t viewsin = 0;
 
+static bool line_rendered[NUM_LINES];
+
+// Subsector to linedef assignment for authentic front-to-back BSP rasterization
+// Subsector 0: Starting Hangar (Lines 0, 1, 2)
+// Subsector 1: Stairs & West Courtyard (Lines 3, 5, 6, 7)
+// Subsector 2: Stairs & East Courtyard (Lines 4, 5, 7, 8)
+// Subsector 3: Computer Terminal Room (Lines 9, 10, 11)
+static const int subsector_lines[4][4] = {
+    { 0, 1, 2, -1 },       // Subsector 0: Starting Hangar
+    { 3, 5, 6, 7 },        // Subsector 1: Stairs & West Courtyard
+    { 4, 5, 7, 8 },        // Subsector 2: Stairs & East Courtyard
+    { 9, 10, 11, -1 }      // Subsector 3: Computer Terminal Room
+};
+
 // ------------------------------------------------------------------------------
-// Clear Occlusion Buffer (solidsegs)
+// Clear Occlusion Buffer (solidsegs) and Per-Frame Line State
 // ------------------------------------------------------------------------------
 void R_ClearClipSegs(void) {
     num_solidsegs = 0;
+    for (size_t i = 0; i < NUM_LINES; i++) {
+        line_rendered[i] = false;
+    }
 }
 
 // ------------------------------------------------------------------------------
@@ -58,11 +75,14 @@ bool R_CheckBBox(const fixed_t bspcoord[4]) {
 // Subsector Processing (Linedef Wall Rendering)
 // ------------------------------------------------------------------------------
 void R_Subsector(int num) {
-    (void)num;
-    // Loop over linedefs in map and render lines belonging to this subsector
-    for (size_t i = 0; i < NUM_LINES; i++) {
-        line_t *line = &map_lines[i];
-        R_AddLine(line);
+    if (num < 0 || num >= 4) return;
+    for (int k = 0; k < 4; k++) {
+        int idx = subsector_lines[num][k];
+        if (idx < 0) break;
+        if (!line_rendered[idx]) {
+            line_rendered[idx] = true;
+            R_AddLine(&map_lines[idx]);
+        }
     }
 }
 

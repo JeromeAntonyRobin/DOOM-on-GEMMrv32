@@ -66,6 +66,20 @@ mobj_t* P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type, angle_t an
             mo->state  = S_IMP_SPAWN;
             mo->tics   = 10;
             break;
+        case MT_DEMON:
+            mo->health = 150;
+            mo->radius = TO_FIXED(30);
+            mo->height = TO_FIXED(56);
+            mo->state  = S_IMP_SPAWN;
+            mo->tics   = 10;
+            break;
+        case MT_SHOTGUNGUY:
+            mo->health = 30;
+            mo->radius = TO_FIXED(20);
+            mo->height = TO_FIXED(56);
+            mo->state  = S_IMP_SPAWN;
+            mo->tics   = 10;
+            break;
         case MT_BARREL:
             mo->health = 20;
             mo->radius = TO_FIXED(10);
@@ -250,31 +264,31 @@ void R_DrawMasked(void) {
 
         if (tz <= TO_FIXED(8)) continue; // Behind or too close
 
-        int screenX = CENTER_X + (int)(((int64_t)tx * FOCAL_LEN) / tz);
-        int spr_h   = (int)(((int64_t)VIEWPORT_H * 32 * FP_ONE) / tz);
-        if (spr_h <= 0) continue;
-        if (spr_h > VIEWPORT_H) spr_h = VIEWPORT_H;
-        int spr_w   = spr_h;
-
-        int drawStartX = screenX - spr_w / 2;
-        int drawEndX   = screenX + spr_w / 2;
-        int drawStartY = CENTER_Y - (int)(((int64_t)(mo->z - viewz + TO_FIXED(24)) * FOCAL_LEN) / tz);
-        int drawEndY   = drawStartY + spr_h;
-
-        if (drawStartX < 0) drawStartX = 0;
-        if (drawEndX >= SCREEN_W) drawEndX = SCREEN_W - 1;
-        if (drawStartY < 0) drawStartY = 0;
-        if (drawEndY >= VIEWPORT_H) drawEndY = VIEWPORT_H - 1;
-
         // Select authentic DOOM 2 monster patch
-        const doom_patch_t *patch = &patch_trooa1;
+        const doom_patch_t *patch = NULL;
         if (mo->type == MT_IMP) {
             patch = &patch_trooa1;
         } else if (mo->type == MT_SHOTGUNGUY || mo->type == MT_ZOMBIEMAN) {
             patch = &patch_sposa1;
         } else if (mo->type == MT_DEMON) {
             patch = &patch_sarga1;
+        } else {
+            continue; // Skip any entities without authentic DOOM 2 patches
         }
+
+        // Exact perspective projection aligned to floor
+        int screenX = CENTER_X + (int)(((int64_t)tx * FOCAL_LEN) / tz);
+        int top_z = mo->z + mo->height - viewz;
+        int bot_z = mo->z - viewz;
+
+        int drawStartY = CENTER_Y - (int)(((int64_t)top_z * FOCAL_LEN) / tz);
+        int drawEndY   = CENTER_Y - (int)(((int64_t)bot_z * FOCAL_LEN) / tz);
+        int spr_h      = drawEndY - drawStartY;
+        if (spr_h <= 0) continue;
+
+        // Preserve authentic aspect ratio from patch dimensions
+        int spr_w = (patch->height > 0) ? ((spr_h * patch->width) / patch->height) : spr_h;
+        if (spr_w <= 0) spr_w = 1;
 
         draw_authentic_patch_scaled(vram, patch, screenX, drawStartY, spr_w, spr_h, tz);
     }

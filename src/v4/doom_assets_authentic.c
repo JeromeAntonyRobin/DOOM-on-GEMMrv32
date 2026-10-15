@@ -930,30 +930,81 @@ void draw_authentic_patch(volatile uint8_t *vram, const doom_patch_t *patch, int
     }
 }
 
+// 2x Scaled Rasterizer for First-Person Super Shotgun (Authentic 1994 DOOM 2 screen proportion)
+void draw_authentic_patch_2x(volatile uint8_t *vram, const doom_patch_t *patch, int px, int py) {
+    const uint8_t *data = patch->data;
+    int w = patch->width;
+    const uint32_t *col_offsets = (const uint32_t *)(data + 8);
+    for (int col = 0; col < w; col++) {
+        int scr_x = px + col * 2;
+        uint32_t ofs = col_offsets[col];
+        while (1) {
+            uint8_t topdelta = data[ofs];
+            if (topdelta == 0xFF) break;
+            uint8_t length = data[ofs + 1];
+            const uint8_t *src = data + ofs + 3;
+            int dest_y = py + topdelta * 2;
+            for (int i = 0; i < length; i++, dest_y += 2) {
+                uint8_t color = src[i];
+                if (dest_y >= 0 && dest_y < 168) {
+                    if (scr_x >= 0 && scr_x < SCREEN_W) {
+                        vram[dest_y * SCREEN_W + scr_x] = color;
+                        if (dest_y + 1 < 168) vram[(dest_y + 1) * SCREEN_W + scr_x] = color;
+                    }
+                    if (scr_x + 1 >= 0 && scr_x + 1 < SCREEN_W) {
+                        vram[dest_y * SCREEN_W + (scr_x + 1)] = color;
+                        if (dest_y + 1 < 168) vram[(dest_y + 1) * SCREEN_W + (scr_x + 1)] = color;
+                    }
+                }
+            }
+            ofs += 4 + length;
+        }
+    }
+}
+
+// Gap-Free Scaled Rasterizer for Billboarded Monsters (Depth-tested against wall_dist_buffer)
 void draw_authentic_patch_scaled(volatile uint8_t *vram, const doom_patch_t *patch, int screenX, int screenY, int spr_w, int spr_h, fixed_t tz) {
     const uint8_t *data = patch->data;
     int w = patch->width;
     int h = patch->height;
+    if (w <= 0 || h <= 0 || spr_w <= 0 || spr_h <= 0) return;
+
     const uint32_t *col_offsets = (const uint32_t *)(data + 8);
     int drawStartX = screenX - spr_w / 2;
     int drawEndX   = screenX + spr_w / 2;
     if (drawStartX < 0) drawStartX = 0;
     if (drawEndX >= SCREEN_W) drawEndX = SCREEN_W - 1;
+
     for (int sx = drawStartX; sx <= drawEndX; sx++) {
         if (tz >= wall_dist_buffer[sx]) continue;
         int patch_col = ((sx - (screenX - spr_w / 2)) * w) / spr_w;
         if (patch_col < 0) patch_col = 0;
         if (patch_col >= w) patch_col = w - 1;
         uint32_t ofs = col_offsets[patch_col];
+
         while (1) {
             uint8_t topdelta = data[ofs];
             if (topdelta == 0xFF) break;
             uint8_t length = data[ofs + 1];
             const uint8_t *src = data + ofs + 3;
-            for (int i = 0; i < length; i++) {
-                int patch_y = topdelta + i;
-                int dest_y = screenY + (patch_y * spr_h) / h;
-                if (dest_y >= 0 && dest_y < 168) vram[dest_y * SCREEN_W + sx] = src[i];
+
+            // Compute exact screen bounds for this post
+            int raw_dest_y0 = screenY + (topdelta * spr_h) / h;
+            int raw_dest_y1 = screenY + ((topdelta + length) * spr_h) / h;
+            int raw_post_h = raw_dest_y1 - raw_dest_y0;
+            if (raw_post_h <= 0) {
+                ofs += 4 + length;
+                continue;
+            }
+
+            int dest_y0 = (raw_dest_y0 < 0) ? 0 : raw_dest_y0;
+            int dest_y1 = (raw_dest_y1 > 168) ? 168 : raw_dest_y1;
+
+            for (int dy = dest_y0; dy < dest_y1; dy++) {
+                int src_i = ((dy - raw_dest_y0) * length) / raw_post_h;
+                if (src_i >= 0 && src_i < length) {
+                    vram[dy * SCREEN_W + sx] = src[src_i];
+                }
             }
             ofs += 4 + length;
         }

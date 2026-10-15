@@ -86,59 +86,41 @@ void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
     sector_t *back  = line->backsector;
     bool is_twosided = (line->flags & ML_TWOSIDED) && back;
 
-    int mid_tex = line->sidenum[0] ? line->sidenum[0]->midtexture : 0;
-    int top_tex = line->sidenum[0] ? line->sidenum[0]->toptexture : 0;
-    int bot_tex = line->sidenum[0] ? line->sidenum[0]->bottomtexture : 0;
-
     for (int x = start_x; x <= end_x; x++) {
+        if (ceilingclip[x] >= floorclip[x]) continue; // Column already fully occluded
+
         // Interpolate distance across segment
         int64_t dx = x - x1;
         fixed_t tz = tz1 + (fixed_t)(((int64_t)(tz2 - tz1) * dx) / span_w);
         if (tz <= 0) continue;
 
-        // Front sector elevations (64-bit precision)
-        int y_ceil  = CENTER_Y - (int)(((int64_t)(front->ceilingheight - viewz) * FOCAL_LEN) / tz);
-        int y_floor = CENTER_Y - (int)(((int64_t)(front->floorheight - viewz) * FOCAL_LEN) / tz);
+        // Unclamped front sector elevations for correct world-space texture mapping
+        int raw_y_ceil  = CENTER_Y - (int)(((int64_t)(front->ceilingheight - viewz) * FOCAL_LEN) / tz);
+        int raw_y_floor = CENTER_Y - (int)(((int64_t)(front->floorheight - viewz) * FOCAL_LEN) / tz);
 
-        // Clamp to screen bounds
-        if (y_ceil < 0) y_ceil = 0;
-        if (y_floor >= VIEWPORT_H) y_floor = VIEWPORT_H - 1;
+        int y_ceil  = (raw_y_ceil < 0) ? 0 : raw_y_ceil;
+        int y_floor = (raw_y_floor >= VIEWPORT_H) ? (VIEWPORT_H - 1) : raw_y_floor;
 
-        // Texture X coordinate
-        int texX = (int)((dx * 64) / span_w) % 64;
-        if (texX < 0) texX += 64;
-
-        // Distance shading (0 = bright, 3 = darkest)
-        int shade = FROM_FIXED(tz) / 100;
-        if (shade > 3) shade = 3;
+        // Texture X coordinate: tile by actual world line length (repeating every 64 units)
+        int64_t wdx = FROM_FIXED(line->dx);
+        int64_t wdy = FROM_FIXED(line->dy);
+        int adx = (wdx < 0) ? -wdx : wdx;
+        int ady = (wdy < 0) ? -wdy : wdy;
+        int wall_len = (adx > ady) ? (adx + (3 * ady) / 8) : (ady + (3 * adx) / 8);
+        if (wall_len <= 0) wall_len = 64;
+        int texX = (int)(((int64_t)dx * wall_len) / span_w) & 63;
 
         // 1. One-Sided Solid Wall
         if (!is_twosided) {
-            // Draw ceiling up to top of wall (DOOM 2 index 112)
-            for (int y = 0; y < y_ceil; y++) {
-                if (y > ceilingclip[x] && y < floorclip[x]) {
-                    vram[y * SCREEN_W + x] = 112; // Authentic tech blue ceiling
-                }
-            }
-
-            // Draw solid wall texture (Authentic DOOM 2 STARTAN3 64x64)
-            int wall_h = y_floor - y_ceil;
-            if (wall_h > 0) {
+            // Draw solid wall texture (Authentic DOOM 2 STARTAN3 tiled 64x64)
+            int raw_wall_h = raw_y_floor - raw_y_ceil;
+            int world_wall_h = FROM_FIXED(front->ceilingheight - front->floorheight);
+            if (raw_wall_h > 0 && world_wall_h > 0) {
                 for (int y = y_ceil; y <= y_floor; y++) {
                     if (y > ceilingclip[x] && y < floorclip[x]) {
-                        int texY = ((y - y_ceil) * 64) / wall_h;
-                        if (texY < 0) texY = 0;
-                        if (texY >= 64) texY = 63;
-                        uint8_t col = tex_startan3[texY * 64 + texX];
-                        vram[y * SCREEN_W + x] = col;
+                        int texY = (int)(((int64_t)(y - raw_y_ceil) * world_wall_h) / raw_wall_h) & 63;
+                        vram[y * SCREEN_W + x] = tex_startan3[texY * 64 + texX];
                     }
-                }
-            }
-
-            // Draw floor below wall (DOOM 2 index 72 brown stone)
-            for (int y = y_floor + 1; y < VIEWPORT_H; y++) {
-                if (y > ceilingclip[x] && y < floorclip[x]) {
-                    vram[y * SCREEN_W + x] = 72; // Authentic brown stone floor flat
                 }
             }
 
@@ -149,71 +131,64 @@ void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
         }
         // 2. Two-Sided Portal / Step Wall
         else {
-            int y_b_ceil  = CENTER_Y - (int)(((int64_t)(back->ceilingheight - viewz) * FOCAL_LEN) / tz);
-            int y_b_floor = CENTER_Y - (int)(((int64_t)(back->floorheight - viewz) * FOCAL_LEN) / tz);
+            int raw_b_ceil  = CENTER_Y - (int)(((int64_t)(back->ceilingheight - viewz) * FOCAL_LEN) / tz);
+            int raw_b_floor = CENTER_Y - (int)(((int64_t)(back->floorheight - viewz) * FOCAL_LEN) / tz);
+            int y_b_ceil  = (raw_b_ceil < 0) ? 0 : raw_b_ceil;
+            int y_b_floor = (raw_b_floor >= VIEWPORT_H) ? (VIEWPORT_H - 1) : raw_b_floor;
 
             // Upper texture (step down ceiling)
             if (front->ceilingheight > back->ceilingheight) {
-                int upper_h = y_b_ceil - y_ceil;
-                if (upper_h > 0) {
+                int raw_upper_h = raw_b_ceil - raw_y_ceil;
+                int world_upper_h = FROM_FIXED(front->ceilingheight - back->ceilingheight);
+                if (raw_upper_h > 0 && world_upper_h > 0) {
                     for (int y = y_ceil; y <= y_b_ceil; y++) {
                         if (y > ceilingclip[x] && y < floorclip[x]) {
-                            int texY = ((y - y_ceil) * 64) / upper_h;
-                            if (texY < 0) texY = 0;
-                            if (texY >= 64) texY = 63;
+                            int texY = (int)(((int64_t)(y - raw_y_ceil) * world_upper_h) / raw_upper_h) & 63;
                             vram[y * SCREEN_W + x] = tex_startan3[texY * 64 + texX];
                         }
                     }
                 }
-                if (y_b_ceil > ceilingclip[x]) ceilingclip[x] = y_b_ceil;
             }
 
             // Lower texture (STAIRS / Step up floor!)
             if (back->floorheight > front->floorheight) {
-                int lower_h = y_floor - y_b_floor;
-                if (lower_h > 0) {
+                int raw_lower_h = raw_y_floor - raw_b_floor;
+                int world_lower_h = FROM_FIXED(back->floorheight - front->floorheight);
+                if (raw_lower_h > 0 && world_lower_h > 0) {
                     for (int y = y_b_floor; y <= y_floor; y++) {
                         if (y > ceilingclip[x] && y < floorclip[x]) {
-                            int texY = ((y - y_b_floor) * 64) / lower_h;
-                            if (texY < 0) texY = 0;
-                            if (texY >= 64) texY = 63;
+                            int texY = (int)(((int64_t)(y - raw_b_floor) * world_lower_h) / raw_lower_h) & 63;
                             vram[y * SCREEN_W + x] = tex_startan3[texY * 64 + texX];
                         }
                     }
                 }
-                if (y_b_floor < floorclip[x]) floorclip[x] = y_b_floor;
             }
 
-            if (tz < wall_dist_buffer[x]) wall_dist_buffer[x] = tz;
+            // Update aperture clipping for two-sided portal
+            if (y_ceil > ceilingclip[x])   ceilingclip[x] = y_ceil;
+            if (y_b_ceil > ceilingclip[x]) ceilingclip[x] = y_b_ceil;
+            if (y_floor < floorclip[x])    floorclip[x] = y_floor;
+            if (y_b_floor < floorclip[x])  floorclip[x] = y_b_floor;
         }
     }
 }
 
 // ------------------------------------------------------------------------------
-// Fill Backdrop: 100% Column Coverage for Open Ceiling / Floor Apertures
-// Ensures every single pixel in the 320x168 viewport is overwritten directly
-// with its authentic background flat, completely eliminating frame retention
-// and buffer artifacts without needing a full-screen clear.
+// Clear Backdrop: 100% Viewport Background Initialization
+// Directly fills the top 84 lines with tech blue ceiling (112) and bottom 84 lines
+// with brown stone floor flat (72). Guarantees zero frame retention, zero weapon
+// ghosting, and 100% clean rendering every frame.
 // ------------------------------------------------------------------------------
-void R_FillBackdrop(void) {
+void R_ClearBackdrop(void) {
     volatile uint8_t *vram = (volatile uint8_t *)VGA_VRAM_BASE;
 
-    for (int x = 0; x < SCREEN_W; x++) {
-        int c_top = ceilingclip[x];
-        int f_bot = floorclip[x];
+    // Fill ceiling (scanlines 0..83)
+    for (int i = 0; i < SCREEN_W * CENTER_Y; i++) {
+        vram[i] = 112; // Authentic tech blue ceiling
+    }
 
-        if (c_top < f_bot) {
-            // Fill unoccluded ceiling above horizon (CENTER_Y = 84)
-            int y_end_ceil = (f_bot < CENTER_Y) ? f_bot : CENTER_Y;
-            for (int y = c_top + 1; y < y_end_ceil; y++) {
-                vram[y * SCREEN_W + x] = 112; // Authentic tech blue ceiling
-            }
-
-            // Fill unoccluded floor below horizon down to f_bot
-            int y_start_floor = (c_top + 1 > CENTER_Y) ? (c_top + 1) : CENTER_Y;
-            for (int y = y_start_floor; y < f_bot; y++) {
-                vram[y * SCREEN_W + x] = 72;  // Authentic brown stone floor flat
-            }
-        }
+    // Fill floor (scanlines 84..167)
+    for (int i = SCREEN_W * CENTER_Y; i < SCREEN_W * VIEWPORT_H; i++) {
+        vram[i] = 72;  // Authentic brown stone floor flat
     }
 }
