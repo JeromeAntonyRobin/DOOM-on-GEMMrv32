@@ -1,4 +1,4 @@
-# GEMMrv32 DOOM v1: 3D DDA Raycaster & Systolic Coprocessor Engine
+﻿# GEMMrv32 DOOM v1: 3D DDA Raycaster & Systolic Coprocessor Engine
 
 **Target Platform:** Digilent Basys 3 FPGA (`xc7a35tcpg236-1`)  
 **Core Architecture:** NEORV32 RV32IM @ 50.0 MHz + 8x8 Systolic GEMM Coprocessor  
@@ -113,17 +113,17 @@ demo_vga_doom_v1/
 $env:PATH = "D:\vivado\2025.2\gnu\riscv\nt\bin;D:\vivado\2025.2\Vivado\gnuwin\bin;" + $env:PATH
 
 # Navigate to project directory
-cd C:\Users\Lenovo\Desktop\GEMMrvStudio\example\src\demo_vga_doom_v1
+cd .\example\src\demo_vga_doom_v1
 
 # Compile ELF
 make RISCV_PREFIX=riscv64-unknown-elf- clean elf
 
 # Flash over serial bootloader using GEMMEngine
 python -c "
-import sys; sys.path.append(r'C:\Users\Lenovo\Desktop\GEMMrvStudio')
+import sys; sys.path.append(r'.')
 from gemm_engine import GEMMEngine
 engine = GEMMEngine(port='COM10', baud=19200)
-success, info = engine.flash_binary(r'C:\Users\Lenovo\Desktop\GEMMrvStudio\example\bin\demo_vga_doom_v1.bin', log_cb=print)
+success, info = engine.flash_binary(r'.\example\bin\demo_vga_doom_v1.bin', log_cb=print)
 print('Flashed:', success, info)
 "
 ```

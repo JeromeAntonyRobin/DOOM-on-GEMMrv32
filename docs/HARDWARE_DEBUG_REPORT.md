@@ -1,4 +1,4 @@
-# GEMMrv32 Hardware & Firmware Debugging Comprehensive Report
+﻿# GEMMrv32 Hardware & Firmware Debugging Comprehensive Report
 
 **Board:** Digilent Basys 3 (`xc7a35tcpg236-1`)  
 **Core:** NEORV32 RISC-V SoC with Custom 8x8 GEMM Systolic Array GPU, VGA Raster Controller, and PS/2 Keyboard Bridge  
@@ -160,13 +160,13 @@ Both issues have been investigated down to their exact hardware/firmware root ca
      - `bit_count = 10`: Verify Stop bit (`1`), then push the verified byte into the 16-entry FIFO.
 
 3. **Wishbone Read Double-Pop Bug:**
-   - In [`neorv32_basys3_top.vhd`](file:///C:/Users/Lenovo/Desktop/GEMMrv32/sw/basys/neorv32_basys3_top.vhd#L177), `ps2_re` was combinationally driven by `ps2_sel and not xbus_we`.
+   - In [`neorv32_basys3_top.vhd`](sw/basys/neorv32_basys3_top.vhd#L177), `ps2_re` was combinationally driven by `ps2_sel and not xbus_we`.
    - Because a Wishbone read cycle spans 2 clock cycles (strobe cycle + acknowledge cycle), `ps2_re` was asserted for two consecutive clock edges on a single `lw` instruction.
    - Result: Every CPU read popped two scancodes from the FIFO, prematurely advancing `fifo_rptr` before the CPU sampled the bus, returning `0x00` when only one byte was buffered.
    - **Fix:** Gated `ps2_re <= ps2_sel and not xbus_we and xbus_ack`, ensuring the FIFO pops exactly once at the precise clock edge when the Wishbone bus master captures the scancode.
 
 4. **FIFO Simultaneous Push/Pop Race Condition:**
-   - In [`neorv32_ps2.vhd`](file:///C:/Users/Lenovo/Desktop/GEMMrv32/rtl/core/neorv32_ps2.vhd#L107-L148), simultaneous stop-bit frame capture and CPU FIFO read resulted in overwriting `fifo_count`.
+   - In [`neorv32_ps2.vhd`](rtl/core/neorv32_ps2.vhd#L107-L148), simultaneous stop-bit frame capture and CPU FIFO read resulted in overwriting `fifo_count`.
    - **Fix:** Refactored into unified `fifo_push` and `fifo_pop` strobe variables with atomic count increments/decrements.
 
 5. **Hardware LED Telemetry for PS/2 Pins:**

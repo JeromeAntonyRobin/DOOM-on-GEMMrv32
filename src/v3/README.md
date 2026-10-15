@@ -1,4 +1,4 @@
-# GEMMrv32 DOOM v3: Native 320x200 @ 4bpp Authentic BSP Engine & Systolic Coprocessor Architecture
+﻿# GEMMrv32 DOOM v3: Native 320x200 @ 4bpp Authentic BSP Engine & Systolic Coprocessor Architecture
 
 **Target Hardware:** Digilent Basys 3 FPGA (`xc7a35tcpg236-1`)  
 **Core Processor:** NEORV32 RV32IM @ 50.0 MHz (64 KB IMEM + 64 KB DMEM On-Chip SRAM)  
@@ -290,7 +290,7 @@ Press **`btnC`** (center button on Basys 3 D-pad) to reset into the bootloader p
 
 * **Via Command Line:**
   ```powershell
-  python C:\Users\Lenovo\Desktop\GEMMrvStudio\gemm_dashboard.py --flash C:\Users\Lenovo\Desktop\GEMMrvStudio\example\bin\demo_vga_doom_v3.bin --port COM10
+  python .\gemm_dashboard.py --flash .\example\bin\demo_vga_doom_v3.bin --port COM10
   ```
 
 ### Step 4: Controls

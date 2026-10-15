@@ -1,4 +1,4 @@
-## Contributing
+﻿## Contributing
 
 Contributions are very welcome!
 If you have any questions, bug reports, ideas or if you want to

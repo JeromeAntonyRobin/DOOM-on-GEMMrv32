@@ -1,4 +1,4 @@
-# DOOM on GEMMrv32: Bare-Metal 3D DOOM on Digilent Basys 3 FPGA
+﻿# DOOM on GEMMrv32: Bare-Metal 3D DOOM on Digilent Basys 3 FPGA
 
 [![Target FPGA](https://img.shields.io/badge/FPGA-Digilent%20Basys%203%20(XC7A35T)-orange?style=flat-square)](https://digilent.com/reference/programmable-logic/basys-3/start)
 [![ISA](https://img.shields.io/badge/ISA-RV32IM%20RISC--V-green?style=flat-square)](https://riscv.org)

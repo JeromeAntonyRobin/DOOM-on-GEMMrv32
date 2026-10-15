@@ -1,4 +1,4 @@
-## NEORV32 Software Library
+﻿## NEORV32 Software Library
 
 This folder contains the NEORV32 hardware abstraction layer (HAL), runtime
 environment, and several helper/auxiliary functions. Application programs

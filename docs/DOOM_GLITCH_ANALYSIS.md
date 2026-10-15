@@ -1,4 +1,4 @@
-# DOOM on GEMMrv32: Visual Artifact & Glitch Technical Analysis
+﻿# DOOM on GEMMrv32: Visual Artifact & Glitch Technical Analysis
 
 This document provides the complete hardware, bus-level, and software-level root cause analysis of the two major visual anomalies encountered during the development of bare-metal DOOM on the GEMMrv32 NEORV32 SoC, and the mathematical principles used to eliminate them.
 

@@ -51,7 +51,7 @@ GEMMrv32 transforms the Digilent Basys 3 FPGA into a **fully autonomous 32-bit R
 ## 2. Master Repository & File Directory
 
 ```
-C:\Users\Lenovo\Desktop\
+workspace/
 ├── GEMMrv32\                                # Root FPGA SoC & Core Library
 │   ├── sw/
 │   │   ├── basys/
@@ -259,26 +259,21 @@ To deploy this exact project on **any other Digilent Basys 3 board (`xc7a35tcpg2
 
 ---
 
-### 5.2 1-Click Hardware Bitstream Synthesis
-To build the complete bitstream from source in Vivado batch mode:
-```powershell
-cd C:\Users\Lenovo\Desktop\GEMMrv32
-& "D:\vivado\2025.2\Vivado\bin\vivado.bat" -mode batch -source sw/basys/build_basys3.tcl
+### 5.2 1-Click Hardware Bitstream Synthesis & Programming
+To program the Basys 3 FPGA via JTAG:
+```bash
+vivado -mode batch -source bit/program_jtag.tcl
 ```
-* Generates `sw/basys/build/neorv32_basys3.bit`
-* Automatically programs connected Basys 3 board via JTAG upon completion.
 
 ---
 
 ### 5.3 1-Click Firmware Compilation & Upload
 To compile and upload the 3D DOOM engine:
-```powershell
-$env:PATH = "D:\vivado\2025.2\gnu\riscv\nt\bin;D:\vivado\2025.2\Vivado\gnuwin\bin;" + $env:PATH
-cd C:\Users\Lenovo\Desktop\GEMMrvStudio\example\src\demo_vga_doom
-make RISCV_PREFIX=riscv64-unknown-elf- clean
-make RISCV_PREFIX=riscv64-unknown-elf- elf
+```bash
+# Build DOOM v2 (Enhanced)
+make v2
 ```
-Open **`gemm_dashboard.py`**, select **`COM10` @ 19200 baud**, select `demo_vga_doom.bin`, and click **Program Board (PROG Mode)**!
+Connect your serial terminal to the Basys 3 USB-UART port (`COM10` or `/dev/ttyUSB*`) at **19200 baud**, press `btnC`, send `u`, upload `bin/demo_vga_doom_v2.bin`, and send `e` to run!
 
 ---
 

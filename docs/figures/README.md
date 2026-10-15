@@ -1,4 +1,4 @@
-## :copyright: Image License and Copyright
+﻿## :copyright: Image License and Copyright
 
 Figures are own work if not otherwise stated; see the
 [project's license](https://github.com/stnolting/neorv32/blob/main/LICENSE).

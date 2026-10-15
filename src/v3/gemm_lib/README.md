@@ -1,4 +1,4 @@
-# GEMM Hardware Accelerator Library
+﻿# GEMM Hardware Accelerator Library
 
 This folder contains a pure C library (`gemmrv_hw.c` / `gemmrv_hw.h`) for interfacing with the custom systolic-array Matrix Multiplication hardware.
 

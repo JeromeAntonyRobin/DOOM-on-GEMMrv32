@@ -1,4 +1,4 @@
-# GEMMrv32 DOOM v2: Enhanced 3D Engine with Textures, Sprites & HUD
+﻿# GEMMrv32 DOOM v2: Enhanced 3D Engine with Textures, Sprites & HUD
 
 **Target Platform:** Digilent Basys 3 FPGA (`xc7a35tcpg236-1`)  
 **Core Architecture:** NEORV32 RV32IM @ 50.0 MHz + 8x8 Systolic GEMM Coprocessor  
@@ -138,7 +138,7 @@ Press **`btnC`** (center button on the Basys 3 D-pad) to reset NEORV32 into the 
 
 * **Via PowerShell CLI:**
   ```powershell
-  python C:\Users\Lenovo\Desktop\GEMMrvStudio\gemm_dashboard.py --flash C:\Users\Lenovo\Desktop\GEMMrvStudio\example\bin\demo_vga_doom_v2.bin --port COM10
+  python .\gemm_dashboard.py --flash .\example\bin\demo_vga_doom_v2.bin --port COM10
   ```
 
 ### Step 4: Play!

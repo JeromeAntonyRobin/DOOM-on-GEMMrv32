@@ -1,4 +1,4 @@
-## Software Framework
+﻿## Software Framework
 
 This folder provides the hardware abstraction layer, drivers, scripts
 and helpers of the NEORV32 software framework.

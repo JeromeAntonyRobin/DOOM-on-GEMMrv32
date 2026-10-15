@@ -1,4 +1,4 @@
-# DOOM-on-GEMMrv32: Standalone FPGA Computer Architecture & GPU Plan
+﻿# DOOM-on-GEMMrv32: Standalone FPGA Computer Architecture & GPU Plan
 
 This document outlines the architecture, hardware modifications, C driver specifications, and software porting roadmap to run **Doom** (and interactive graphics applications) on the **Digilent Basys 3** using the **GEMMrv32** SoC.
 
@@ -153,9 +153,9 @@ char ps2_scancode_to_ascii(uint8_t scancode);
 
 | Step | Milestone | Output |
 |---|---|---|
-| **Phase 1** | **I/O & Constraints Definition** | Update [basys3.xdc](file:///C:/Users/Lenovo/Desktop/GEMMrv32/sw/basys/basys3.xdc) with VGA (14 pins) and PS/2 (2 pins). |
+| **Phase 1** | **I/O & Constraints Definition** | Update [basys3.xdc](sw/basys/basys3.xdc) with VGA (14 pins) and PS/2 (2 pins). |
 | **Phase 2** | **VGA & Keyboard RTL Cores** | Write `neorv32_vga.vhd` (with 160x120 / 320x200 pixel scaling + palette) and `neorv32_ps2.vhd`. |
-| **Phase 3** | **SoC Integration** | Wire VGA and PS/2 into [neorv32_basys3_top.vhd](file:///C:/Users/Lenovo/Desktop/GEMMrv32/sw/basys/neorv32_basys3_top.vhd). |
+| **Phase 3** | **SoC Integration** | Wire VGA and PS/2 into [neorv32_basys3_top.vhd](sw/basys/neorv32_basys3_top.vhd). |
 | **Phase 4** | **C Hardware Drivers** | Implement `gemmrv_gpu.c` and `gemmrv_ps2.c` in `sw/example/gemm_lib`. |
 | **Phase 5** | **Graphics & Shell Sanity Demo** | A standalone C console firmware with text terminal, color bars, bouncing 3D cube, and keyboard echo. |
 | **Phase 6** | **Doom Port (Doom-Tiny / Pure-Doom Baremetal)** | Adapt a minimal C Doom engine (e.g. PureDoom / Generic Doom) replacing `I_Video` and `I_Input` with `gemmrv_gpu` routines. |
