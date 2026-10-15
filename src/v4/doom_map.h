@@ -13,28 +13,27 @@
 // ------------------------------------------------------------------------------
 static const vertex_t map_vertices[] __attribute__((unused)) = {
     // Sector 0: Starting Hangar (0..3)
-    { TO_FIXED(-200), TO_FIXED(-200) }, // 0
-    { TO_FIXED( 200), TO_FIXED(-200) }, // 1
-    { TO_FIXED( 200), TO_FIXED( 100) }, // 2
-    { TO_FIXED(-200), TO_FIXED( 100) }, // 3
+    { TO_FIXED(-200), TO_FIXED(-200) }, // 0: SW
+    { TO_FIXED( 200), TO_FIXED(-200) }, // 1: SE
+    { TO_FIXED( 200), TO_FIXED( 100) }, // 2: NE / Comp NW
+    { TO_FIXED(-200), TO_FIXED( 100) }, // 3: NW
 
     // Sector 1: Stairway Portal to Courtyard (4..7)
-    { TO_FIXED(-100), TO_FIXED( 100) }, // 4 (Shared with 3..2)
-    { TO_FIXED( 100), TO_FIXED( 100) }, // 5
-    { TO_FIXED( 100), TO_FIXED( 250) }, // 6
-    { TO_FIXED(-100), TO_FIXED( 250) }, // 7
+    { TO_FIXED(-100), TO_FIXED( 100) }, // 4: Stair SW / Hangar N1
+    { TO_FIXED( 100), TO_FIXED( 100) }, // 5: Stair SE / Hangar N2
+    { TO_FIXED( 100), TO_FIXED( 250) }, // 6: Stair NE / Courtyard S2
+    { TO_FIXED(-100), TO_FIXED( 250) }, // 7: Stair NW / Courtyard S1
 
     // Sector 2: Sunken Toxic Slime Courtyard (8..11)
-    { TO_FIXED(-350), TO_FIXED( 250) }, // 8
-    { TO_FIXED( 350), TO_FIXED( 250) }, // 9
-    { TO_FIXED( 350), TO_FIXED( 600) }, // 10
-    { TO_FIXED(-350), TO_FIXED( 600) }, // 11
+    { TO_FIXED(-350), TO_FIXED( 250) }, // 8: Courtyard SW
+    { TO_FIXED( 350), TO_FIXED( 250) }, // 9: Courtyard SE
+    { TO_FIXED( 350), TO_FIXED( 600) }, // 10: Courtyard NE
+    { TO_FIXED(-350), TO_FIXED( 600) }, // 11: Courtyard NW
 
-    // Sector 3: Computer Terminal Control Room (12..15)
-    { TO_FIXED( 100), TO_FIXED(-100) }, // 12 (Right alcove off Hangar)
-    { TO_FIXED( 400), TO_FIXED(-100) }, // 13
-    { TO_FIXED( 400), TO_FIXED( 100) }, // 14
-    { TO_FIXED( 200), TO_FIXED( 100) }  // 15
+    // Sector 3: Computer Terminal Control Room (12..14)
+    { TO_FIXED( 200), TO_FIXED(-100) }, // 12: Comp SW / Hangar Portal South
+    { TO_FIXED( 400), TO_FIXED(-100) }, // 13: Comp SE
+    { TO_FIXED( 400), TO_FIXED( 100) }  // 14: Comp NE
 };
 
 #define NUM_VERTICES (sizeof(map_vertices) / sizeof(map_vertices[0]))
@@ -87,34 +86,34 @@ static sector_t map_sectors[] __attribute__((unused)) = {
 // 3. Sidedefs (Texture Mappings)
 // ------------------------------------------------------------------------------
 static side_t map_sidedefs[] __attribute__((unused)) = {
-    // 0..3: Hangar solid outer walls (STARTAN3: tex 0)
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] },
+    // 0..8: Sector 0 (Hangar) Sidedefs
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] }, // 0: South
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] }, // 1: West
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] }, // 2: NW wing
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = -1, .bottomtexture = 1, .sector = &map_sectors[0] }, // 3: Portal to stairs
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[1] }, // 4: Portal back from stairs
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] }, // 5: NE wing
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = -1, .bottomtexture = 1, .sector = &map_sectors[0] }, // 6: Portal to comp
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[3] }, // 7: Portal back from comp
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 0, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[0] }, // 8: East lower
 
-    // 4..5: Stairway Portal Sidedefs (Two-sided step from Sector 0 to 1)
-    // Front side (facing Hangar): Lower texture draws step face (BROWN96: tex 1)
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = -1, .bottomtexture = 1, .sector = &map_sectors[0] },
-    // Back side (facing Stairs):
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[1] },
+    // 9..12: Sector 1 (Stairs) Sidedefs
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[1] }, // 9: West
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = 0, .bottomtexture = 1, .sector = &map_sectors[1] }, // 10: Portal to courtyard
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = 0, .bottomtexture = 1, .sector = &map_sectors[2] }, // 11: Portal back from courtyard
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[1] }, // 12: East
 
-    // 6..7: Stairway Portal Sidedefs to Courtyard (Two-sided step from Sector 1 to 2)
-    // Step down from +32 to -32: Lower texture draws deep drop face (BROWN96: tex 1)
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = 0, .bottomtexture = 1, .sector = &map_sectors[1] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = 0, .bottomtexture = 1, .sector = &map_sectors[2] },
+    // 13..17: Sector 2 (Courtyard) Sidedefs
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] }, // 13: SW wing
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] }, // 14: West
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] }, // 15: North
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] }, // 16: East
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] }, // 17: SE wing
 
-    // 8..11: Courtyard Outer Perimeter Walls (BROWN96: tex 1)
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 1, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[2] },
-
-    // 12..15: Computer Terminal Alcove Walls (COMP01: tex 2)
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 2, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[3] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 2, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[3] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = 2, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[3] },
-    { .textureoffset = 0, .rowoffset = 0, .midtexture = -1, .toptexture = -1, .bottomtexture = 1, .sector = &map_sectors[0] } // Portal
+    // 18..20: Sector 3 (Computer Room) Sidedefs
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 2, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[3] }, // 18: South
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 2, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[3] }, // 19: East
+    { .textureoffset = 0, .rowoffset = 0, .midtexture = 2, .toptexture = -1, .bottomtexture = -1, .sector = &map_sectors[3] }  // 20: North
 };
 
 #define NUM_SIDEDEFS (sizeof(map_sidedefs) / sizeof(map_sidedefs[0]))
@@ -123,83 +122,137 @@ static side_t map_sidedefs[] __attribute__((unused)) = {
 // 4. Linedefs (One-Sided Solid Walls vs. Two-Sided Step Portals)
 // ------------------------------------------------------------------------------
 static line_t map_lines[] __attribute__((unused)) = {
-    // Line 0: Hangar South Wall (Solid)
+    // --- Sector 0: Starting Hangar Enclosure ---
+    // Line 0: Hangar South Wall (Solid) - V1 -> V0
     {
-        .v1 = (vertex_t*)&map_vertices[0], .v2 = (vertex_t*)&map_vertices[1],
-        .dx = TO_FIXED(400), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
+        .v1 = (vertex_t*)&map_vertices[1], .v2 = (vertex_t*)&map_vertices[0],
+        .dx = TO_FIXED(-400), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
         .sidenum = { &map_sidedefs[0], NULL },
         .frontsector = &map_sectors[0], .backsector = NULL
     },
-    // Line 1: Hangar West Wall (Solid)
+    // Line 1: Hangar West Wall (Solid) - V0 -> V3
     {
-        .v1 = (vertex_t*)&map_vertices[3], .v2 = (vertex_t*)&map_vertices[0],
-        .dx = TO_FIXED(0), .dy = TO_FIXED(-300), .flags = ML_BLOCKING,
+        .v1 = (vertex_t*)&map_vertices[0], .v2 = (vertex_t*)&map_vertices[3],
+        .dx = TO_FIXED(0), .dy = TO_FIXED(300), .flags = ML_BLOCKING,
         .sidenum = { &map_sidedefs[1], NULL },
         .frontsector = &map_sectors[0], .backsector = NULL
     },
-    // Line 2: Hangar Portal to Stairway (Two-Sided Step!)
+    // Line 2: Hangar NW Wing Wall (Solid) - V3 -> V4
+    {
+        .v1 = (vertex_t*)&map_vertices[3], .v2 = (vertex_t*)&map_vertices[4],
+        .dx = TO_FIXED(100), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[2], NULL },
+        .frontsector = &map_sectors[0], .backsector = NULL
+    },
+    // Line 3: Hangar to Stairway Portal (Two-Sided Step) - V4 -> V5
     {
         .v1 = (vertex_t*)&map_vertices[4], .v2 = (vertex_t*)&map_vertices[5],
         .dx = TO_FIXED(200), .dy = TO_FIXED(0), .flags = ML_TWOSIDED,
-        .sidenum = { &map_sidedefs[4], &map_sidedefs[5] },
+        .sidenum = { &map_sidedefs[3], &map_sidedefs[4] },
         .frontsector = &map_sectors[0], .backsector = &map_sectors[1]
     },
-    // Line 3: Stairway Side Walls
+    // Line 4: Hangar NE Wing Wall (Solid) - V5 -> V2
+    {
+        .v1 = (vertex_t*)&map_vertices[5], .v2 = (vertex_t*)&map_vertices[2],
+        .dx = TO_FIXED(100), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[5], NULL },
+        .frontsector = &map_sectors[0], .backsector = NULL
+    },
+    // Line 5: Hangar to Computer Room Portal (Two-Sided Step) - V2 -> V12
+    {
+        .v1 = (vertex_t*)&map_vertices[2], .v2 = (vertex_t*)&map_vertices[12],
+        .dx = TO_FIXED(0), .dy = TO_FIXED(-200), .flags = ML_TWOSIDED,
+        .sidenum = { &map_sidedefs[6], &map_sidedefs[7] },
+        .frontsector = &map_sectors[0], .backsector = &map_sectors[3]
+    },
+    // Line 6: Hangar East Wall below Computer Room (Solid) - V12 -> V1
+    {
+        .v1 = (vertex_t*)&map_vertices[12], .v2 = (vertex_t*)&map_vertices[1],
+        .dx = TO_FIXED(0), .dy = TO_FIXED(-100), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[8], NULL },
+        .frontsector = &map_sectors[0], .backsector = NULL
+    },
+
+    // --- Sector 1: Stairway Enclosure ---
+    // Line 7: Stairway West Wall (Solid) - V4 -> V7
     {
         .v1 = (vertex_t*)&map_vertices[4], .v2 = (vertex_t*)&map_vertices[7],
         .dx = TO_FIXED(0), .dy = TO_FIXED(150), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[2], NULL },
+        .sidenum = { &map_sidedefs[9], NULL },
         .frontsector = &map_sectors[1], .backsector = NULL
     },
-    {
-        .v1 = (vertex_t*)&map_vertices[6], .v2 = (vertex_t*)&map_vertices[5],
-        .dx = TO_FIXED(0), .dy = TO_FIXED(-150), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[3], NULL },
-        .frontsector = &map_sectors[1], .backsector = NULL
-    },
-    // Line 4: Stairway to Toxic Courtyard Portal (Two-Sided Ledge Drop!)
+    // Line 8: Stairway to Courtyard Portal (Two-Sided Drop) - V7 -> V6
     {
         .v1 = (vertex_t*)&map_vertices[7], .v2 = (vertex_t*)&map_vertices[6],
         .dx = TO_FIXED(200), .dy = TO_FIXED(0), .flags = ML_TWOSIDED,
-        .sidenum = { &map_sidedefs[6], &map_sidedefs[7] },
+        .sidenum = { &map_sidedefs[10], &map_sidedefs[11] },
         .frontsector = &map_sectors[1], .backsector = &map_sectors[2]
     },
-    // Line 5..7: Toxic Courtyard Perimeter Walls (Solid)
+    // Line 9: Stairway East Wall (Solid) - V6 -> V5
+    {
+        .v1 = (vertex_t*)&map_vertices[6], .v2 = (vertex_t*)&map_vertices[5],
+        .dx = TO_FIXED(0), .dy = TO_FIXED(-150), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[12], NULL },
+        .frontsector = &map_sectors[1], .backsector = NULL
+    },
+
+    // --- Sector 2: Sunken Toxic Slime Courtyard Enclosure ---
+    // Line 10: Courtyard SW Wing Wall (Solid) - V7 -> V8
+    {
+        .v1 = (vertex_t*)&map_vertices[7], .v2 = (vertex_t*)&map_vertices[8],
+        .dx = TO_FIXED(-250), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[13], NULL },
+        .frontsector = &map_sectors[2], .backsector = NULL
+    },
+    // Line 11: Courtyard West Wall (Solid) - V8 -> V11
     {
         .v1 = (vertex_t*)&map_vertices[8], .v2 = (vertex_t*)&map_vertices[11],
         .dx = TO_FIXED(0), .dy = TO_FIXED(350), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[8], NULL },
+        .sidenum = { &map_sidedefs[14], NULL },
         .frontsector = &map_sectors[2], .backsector = NULL
     },
+    // Line 12: Courtyard North Wall (Solid) - V11 -> V10
     {
         .v1 = (vertex_t*)&map_vertices[11], .v2 = (vertex_t*)&map_vertices[10],
         .dx = TO_FIXED(700), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[9], NULL },
+        .sidenum = { &map_sidedefs[15], NULL },
         .frontsector = &map_sectors[2], .backsector = NULL
     },
+    // Line 13: Courtyard East Wall (Solid) - V10 -> V9
     {
         .v1 = (vertex_t*)&map_vertices[10], .v2 = (vertex_t*)&map_vertices[9],
         .dx = TO_FIXED(0), .dy = TO_FIXED(-350), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[10], NULL },
+        .sidenum = { &map_sidedefs[16], NULL },
         .frontsector = &map_sectors[2], .backsector = NULL
     },
-    // Line 8..10: Computer Terminal Control Room (Solid)
+    // Line 14: Courtyard SE Wing Wall (Solid) - V9 -> V6
     {
-        .v1 = (vertex_t*)&map_vertices[12], .v2 = (vertex_t*)&map_vertices[13],
-        .dx = TO_FIXED(300), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[12], NULL },
-        .frontsector = &map_sectors[3], .backsector = NULL
+        .v1 = (vertex_t*)&map_vertices[9], .v2 = (vertex_t*)&map_vertices[6],
+        .dx = TO_FIXED(-250), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[17], NULL },
+        .frontsector = &map_sectors[2], .backsector = NULL
     },
+
+    // --- Sector 3: Computer Terminal Control Room Enclosure ---
+    // Line 15: Computer Room South Wall (Solid) - V13 -> V12
     {
-        .v1 = (vertex_t*)&map_vertices[13], .v2 = (vertex_t*)&map_vertices[14],
-        .dx = TO_FIXED(0), .dy = TO_FIXED(200), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[13], NULL },
-        .frontsector = &map_sectors[3], .backsector = NULL
-    },
-    {
-        .v1 = (vertex_t*)&map_vertices[14], .v2 = (vertex_t*)&map_vertices[15],
+        .v1 = (vertex_t*)&map_vertices[13], .v2 = (vertex_t*)&map_vertices[12],
         .dx = TO_FIXED(-200), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
-        .sidenum = { &map_sidedefs[14], NULL },
+        .sidenum = { &map_sidedefs[18], NULL },
+        .frontsector = &map_sectors[3], .backsector = NULL
+    },
+    // Line 16: Computer Room East Wall (Solid) - V14 -> V13
+    {
+        .v1 = (vertex_t*)&map_vertices[14], .v2 = (vertex_t*)&map_vertices[13],
+        .dx = TO_FIXED(0), .dy = TO_FIXED(-200), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[19], NULL },
+        .frontsector = &map_sectors[3], .backsector = NULL
+    },
+    // Line 17: Computer Room North Wall (Solid) - V2 -> V14
+    {
+        .v1 = (vertex_t*)&map_vertices[2], .v2 = (vertex_t*)&map_vertices[14],
+        .dx = TO_FIXED(200), .dy = TO_FIXED(0), .flags = ML_BLOCKING,
+        .sidenum = { &map_sidedefs[20], NULL },
         .frontsector = &map_sectors[3], .backsector = NULL
     }
 };

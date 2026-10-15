@@ -63,18 +63,28 @@ void R_AddLine(line_t *line) {
     // Perspective projection onto screen X (using 64-bit intermediate to prevent overflow)
     int x1 = CENTER_X + (int)(((int64_t)tx1 * FOCAL_LEN) / tz1);
     int x2 = CENTER_X + (int)(((int64_t)tx2 * FOCAL_LEN) / tz2);
+    sector_t *front = line->frontsector;
+    sector_t *back  = line->backsector;
+    bool is_twosided = (line->flags & ML_TWOSIDED) && back;
 
-    // Must be front-facing (x1 < x2)
-    if (x1 >= x2) return;
+    // Must be front-facing (x1 < x2); for two-sided portals, support viewing from back side
+    if (x1 > x2) {
+        if (!is_twosided) return; // One-sided walls are back-face culled
+        int tmp_x = x1; x1 = x2; x2 = tmp_x;
+        fixed_t tmp_tz = tz1; tz1 = tz2; tz2 = tmp_tz;
+        front = line->backsector;
+        back  = line->frontsector;
+    }
+    if (x1 == x2) return;
     if (x2 < 0 || x1 >= SCREEN_W) return; // Off-screen
 
-    R_StoreWallRange(x1, x2, line, tz1, tz2);
+    R_StoreWallRange(x1, x2, line, tz1, tz2, front, back);
 }
 
 // ------------------------------------------------------------------------------
 // Store Wall Range: Rasterize Multi-Height Wall Columns & Portals
 // ------------------------------------------------------------------------------
-void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
+void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2, sector_t *front, sector_t *back) {
     volatile uint8_t *vram = (volatile uint8_t *)VGA_VRAM_BASE;
 
     int start_x = (x1 < 0) ? 0 : x1;
@@ -82,8 +92,6 @@ void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
     int span_w  = x2 - x1;
     if (span_w <= 0) return;
 
-    sector_t *front = line->frontsector;
-    sector_t *back  = line->backsector;
     bool is_twosided = (line->flags & ML_TWOSIDED) && back;
 
     for (int x = start_x; x <= end_x; x++) {

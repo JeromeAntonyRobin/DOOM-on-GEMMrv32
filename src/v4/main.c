@@ -124,13 +124,13 @@ static void render_weapon(volatile uint8_t *vram) {
 static void render_minimap(volatile uint8_t *vram) {
     if (!show_minimap) return;
 
-    // Draw lines of the level
+    // Draw lines of the level (North is UP)
     for (size_t i = 0; i < NUM_LINES; i++) {
         line_t *line = &map_lines[i];
-        int x1 = (FROM_FIXED(line->v1->x) + 400) / 16 + 4;
-        int y1 = (FROM_FIXED(line->v1->y) + 250) / 16 + 4;
-        int x2 = (FROM_FIXED(line->v2->x) + 400) / 16 + 4;
-        int y2 = (FROM_FIXED(line->v2->y) + 250) / 16 + 4;
+        int x1 = (FROM_FIXED(line->v1->x) + 380) / 16 + 4;
+        int y1 = 55 - (FROM_FIXED(line->v1->y) + 200) / 16;
+        int x2 = (FROM_FIXED(line->v2->x) + 380) / 16 + 4;
+        int y2 = 55 - (FROM_FIXED(line->v2->y) + 200) / 16;
 
         int dx = (x2 > x1) ? (x2 - x1) : (x1 - x2);
         int dy = (y2 > y1) ? (y2 - y1) : (y1 - y2);
@@ -148,12 +148,12 @@ static void render_minimap(volatile uint8_t *vram) {
         }
     }
 
-    // Draw player position
-    int px = (FROM_FIXED(viewx) + 400) / 16 + 4;
-    int py = (FROM_FIXED(viewy) + 250) / 16 + 4;
+    // Draw player position and heading indicator (North is UP)
+    int px = (FROM_FIXED(viewx) + 380) / 16 + 4;
+    int py = 55 - (FROM_FIXED(viewy) + 200) / 16;
     put_pixel(vram, px, py, 4); // White dot
-    int dir_x = px + FROM_FIXED(viewsin * 4);
-    int dir_y = py + FROM_FIXED(viewcos * 4);
+    int dir_x = px + FROM_FIXED(viewcos * 4);
+    int dir_y = py - FROM_FIXED(viewsin * 4); // Negative Y on screen is UP (North)
     put_pixel(vram, dir_x, dir_y, 176); // Red tick
 }
 
@@ -207,23 +207,23 @@ static void handle_input(char cmd) {
     switch (cmd) {
         case 'w': case 'W': // Forward
             if (player_mobj) {
-                player_mobj->x += FIXED_MUL(viewsin, move_speed);
-                player_mobj->y += FIXED_MUL(viewcos, move_speed);
+                player_mobj->x += FIXED_MUL(viewcos, move_speed);
+                player_mobj->y += FIXED_MUL(viewsin, move_speed);
                 walk_bob = !walk_bob;
             }
             break;
         case 's': case 'S': // Backward
             if (player_mobj) {
-                player_mobj->x -= FIXED_MUL(viewsin, move_speed);
-                player_mobj->y -= FIXED_MUL(viewcos, move_speed);
+                player_mobj->x -= FIXED_MUL(viewcos, move_speed);
+                player_mobj->y -= FIXED_MUL(viewsin, move_speed);
                 walk_bob = !walk_bob;
             }
             break;
         case 'a': case 'A': // Turn Left
-            player_angle_idx = (player_angle_idx - 1) & 63;
+            player_angle_idx = (player_angle_idx + 1) & 63;
             break;
         case 'd': case 'D': // Turn Right
-            player_angle_idx = (player_angle_idx + 1) & 63;
+            player_angle_idx = (player_angle_idx - 1) & 63;
             break;
         case ' ': case 'f': case 'F': // FIRE SUPER SHOTGUN!
             if (player_ammo > 0) {
