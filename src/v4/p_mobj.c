@@ -1,6 +1,6 @@
 #include "p_mobj.h"
 #include "doom_map.h"
-#include "doom_assets_4bpp.h"
+#include "doom_assets_authentic.h"
 #include "r_bsp.h"
 #include "r_segs.h"
 #include "gemm_lib/gemmrv_gpu.h"
@@ -266,41 +266,16 @@ void R_DrawMasked(void) {
         if (drawStartY < 0) drawStartY = 0;
         if (drawEndY >= VIEWPORT_H) drawEndY = VIEWPORT_H - 1;
 
-        // Select sprite frame
-        uint8_t *spr_data = spr_imp_walk[0];
+        // Select authentic DOOM 2 monster patch
+        const doom_patch_t *patch = &patch_trooa1;
         if (mo->type == MT_IMP) {
-            if (mo->state == S_IMP_ATK1)     spr_data = spr_imp_attack;
-            else if (mo->state == S_IMP_DEAD) spr_data = spr_imp_die[0];
-            else spr_data = spr_imp_walk[(mo->tics % 2 == 0) ? 0 : 1];
-        } else if (mo->type == MT_FIREBALL) {
-            spr_data = spr_fireball;
-        } else if (mo->type == MT_BARREL) {
-            spr_data = spr_barrel;
-        } else if (mo->type == MT_MEDKIT) {
-            spr_data = spr_medkit;
+            patch = &patch_trooa1;
+        } else if (mo->type == MT_SHOTGUNGUY || mo->type == MT_ZOMBIEMAN) {
+            patch = &patch_sposa1;
+        } else if (mo->type == MT_DEMON) {
+            patch = &patch_sarga1;
         }
 
-        // Draw vertical sprite slices
-        for (int x = drawStartX; x <= drawEndX; x++) {
-            // Depth test against Z-Buffer: if occluded by wall, skip!
-            if (tz >= wall_dist_buffer[x]) continue;
-
-            int texX = ((x - (screenX - spr_w / 2)) * SPR32_W) / spr_w;
-            if (texX < 0) texX = 0;
-            if (texX >= SPR32_W) texX = SPR32_W - 1;
-
-            for (int y = drawStartY; y <= drawEndY; y++) {
-                int texY = ((y - drawStartY) * SPR32_H) / spr_h;
-                if (texY < 0) texY = 0;
-                if (texY >= SPR32_H) texY = SPR32_H - 1;
-
-                int byte_idx = (texY * SPR32_W + texX) >> 1;
-                uint8_t col = (texX & 1) ? (spr_data[byte_idx] & 0x0F) : (spr_data[byte_idx] >> 4);
-
-                if (col != COLOR_4BPP_TRANS) {
-                    put_pixel_4bpp(vram, x, y, col);
-                }
-            }
-        }
+        draw_authentic_patch_scaled(vram, patch, screenX, drawStartY, spr_w, spr_h, tz);
     }
 }

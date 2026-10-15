@@ -139,6 +139,8 @@ extern int num_visplanes;
 typedef enum {
     MT_PLAYER,
     MT_IMP,
+    MT_SHOTGUNGUY,
+    MT_DEMON,
     MT_ZOMBIEMAN,
     MT_BARREL,
     MT_FIREBALL,
@@ -203,13 +205,17 @@ static inline uint8_t get_pixel(const volatile uint8_t *vram, int x, int y) {
     return 0;
 }
 
-// Backward-compatibility wrappers
-#define VGA_VRAM_4BPP_BASE  VGA_VRAM_BASE
-static inline void put_pixel_4bpp(volatile uint8_t *vram, int x, int y, uint8_t col) {
-    put_pixel(vram, x, y, col);
-}
-static inline uint8_t get_pixel_4bpp(const volatile uint8_t *vram, int x, int y) {
-    return get_pixel(vram, x, y);
+#define VGA_STATUS_REG      0x90010400
+#define VGA_STAT_VBLANK     (1 << 0)
+
+static inline void wait_for_vblank(void) {
+    volatile uint32_t *vga_stat = (volatile uint32_t *)VGA_STATUS_REG;
+    int timeout = 250000;
+    // Wait for ongoing VBlank to complete
+    while ((*vga_stat & VGA_STAT_VBLANK) && --timeout > 0);
+    timeout = 250000;
+    // Wait for start of next VBlank interval
+    while (!(*vga_stat & VGA_STAT_VBLANK) && --timeout > 0);
 }
 
 #endif // DOOM_DEFS_H

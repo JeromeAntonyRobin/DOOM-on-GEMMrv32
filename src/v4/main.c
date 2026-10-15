@@ -9,7 +9,7 @@
 #include <neorv32.h>
 #include "doom_defs.h"
 #include "doom_map.h"
-#include "doom_assets_4bpp.h"
+#include "doom_assets_authentic.h"
 #include "r_bsp.h"
 #include "r_segs.h"
 #include "p_mobj.h"
@@ -50,41 +50,34 @@ static inline fixed_t get_cos(int idx) { return sin_table[(idx + 16) & 63]; }
 // ==============================================================================
 // Render Status Bar HUD (Bottom 32 scanlines: y = 168..199)
 // ==============================================================================
-static void render_status_bar_4bpp(volatile uint8_t *vram) {
-    // 1. Draw Industrial Grey Beveled Plate
+// ==============================================================================
+// Render Status Bar HUD (Bottom 32 scanlines: y = 168..199)
+// ==============================================================================
+static void render_status_bar(volatile uint8_t *vram) {
+    // 1. Draw Industrial Grey Beveled Plate using authentic DOOM 2 grey ramp (palette indices 96..111)
     for (int y = VIEWPORT_H; y < SCREEN_H; y++) {
-        uint8_t line_col = 2; // Medium grey
-        if (y == VIEWPORT_H)       line_col = 1; // Top shadow line
-        else if (y == VIEWPORT_H + 1) line_col = 3; // Bevel highlight
-        else if (y == SCREEN_H - 1) line_col = 0; // Bottom groove
+        uint8_t line_col = 104; // Medium grey
+        if (y == VIEWPORT_H)          line_col = 100; // Top shadow line
+        else if (y == VIEWPORT_H + 1) line_col = 108; // Bevel highlight
+        else if (y == SCREEN_H - 1)   line_col = 96;  // Bottom dark groove
 
         for (int x = 0; x < SCREEN_W; x++) {
-            put_pixel_4bpp(vram, x, y, line_col);
+            vram[y * SCREEN_W + x] = line_col;
         }
     }
 
-    // 2. Draw Doomguy Face in Center (x = 148..171, y = 174..193)
-    uint8_t *face = doomguy_face_idle;
-    if (muzzle_flash > 0) face = doomguy_face_grin;
-    else if (player_health < 40) face = doomguy_face_pain;
-
-    int face_x = (SCREEN_W - FACE_W) / 2;
-    int face_y = VIEWPORT_H + 6;
-
-    for (int fy = 0; fy < FACE_H; fy++) {
-        for (int fx = 0; fx < FACE_W; fx++) {
-            int byte_idx = (fy * FACE_W + fx) >> 1;
-            uint8_t col = (fx & 1) ? (face[byte_idx] & 0x0F) : (face[byte_idx] >> 4);
-            put_pixel_4bpp(vram, face_x + fx, face_y + fy, col);
-        }
-    }
+    // 2. Draw Authentic Doomguy Face in Center (STFST00 / STFEVL0)
+    const doom_patch_t *face = (muzzle_flash > 0) ? &patch_stfevl0 : &patch_stfst00;
+    int face_x = (SCREEN_W - face->width) / 2;
+    int face_y = VIEWPORT_H + 1;
+    draw_authentic_patch(vram, face, face_x, face_y);
 
     // 3. Ammo Bar on Left (x = 20..84, y = 180..187)
     int ammo_fill = (player_ammo * 64) / 50;
     for (int y = VIEWPORT_H + 12; y <= VIEWPORT_H + 19; y++) {
         for (int x = 20; x <= 84; x++) {
-            uint8_t col = (x - 20 <= ammo_fill) ? 7 : 0; // Gold amber ammo bar
-            put_pixel_4bpp(vram, x, y, col);
+            uint8_t col = (x - 20 <= ammo_fill) ? 224 : 0; // Gold amber ammo bar (DOOM 2 index 224)
+            vram[y * SCREEN_W + x] = col;
         }
     }
 
@@ -92,38 +85,26 @@ static void render_status_bar_4bpp(volatile uint8_t *vram) {
     int health_fill = (player_health * 64) / 100;
     for (int y = VIEWPORT_H + 12; y <= VIEWPORT_H + 19; y++) {
         for (int x = 236; x <= 300; x++) {
-            uint8_t col = (x - 236 <= health_fill) ? 5 : 0; // Blood red health bar
-            put_pixel_4bpp(vram, x, y, col);
+            uint8_t col = (x - 236 <= health_fill) ? 176 : 0; // Blood red health bar (DOOM 2 index 176)
+            vram[y * SCREEN_W + x] = col;
         }
     }
 }
 
 // ==============================================================================
-// Render First-Person Shotgun Weapon Overlay
+// Render First-Person Authentic Super Shotgun Weapon Overlay
 // ==============================================================================
-static void render_weapon_4bpp(volatile uint8_t *vram) {
-    uint8_t *wpn = (muzzle_flash > 0) ? weapon_flash : weapon_shotgun;
-    int wpn_x = (SCREEN_W - WEAPON32_W) / 2;
-    int wpn_y = VIEWPORT_H - WEAPON32_H + (walk_bob ? 3 : 0);
-
-    for (int wy = 0; wy < WEAPON32_H; wy++) {
-        int py = wpn_y + wy;
-        if (py < 0 || py >= VIEWPORT_H) continue;
-
-        for (int wx = 0; wx < WEAPON32_W; wx++) {
-            int byte_idx = (wy * WEAPON32_W + wx) >> 1;
-            uint8_t col = (wx & 1) ? (wpn[byte_idx] & 0x0F) : (wpn[byte_idx] >> 4);
-            if (col != COLOR_4BPP_TRANS) {
-                put_pixel_4bpp(vram, wpn_x + wx, py, col);
-            }
-        }
-    }
+static void render_weapon(volatile uint8_t *vram) {
+    const doom_patch_t *wpn = &patch_sht2a0;
+    int wpn_x = (SCREEN_W - wpn->width) / 2;
+    int wpn_y = VIEWPORT_H - wpn->height + (walk_bob ? 3 : 0);
+    draw_authentic_patch(vram, wpn, wpn_x, wpn_y);
 }
 
 // ==============================================================================
 // Render 2D Minimap Overlay in Top-Left Corner
 // ==============================================================================
-static void render_minimap_4bpp(volatile uint8_t *vram) {
+static void render_minimap(volatile uint8_t *vram) {
     if (!show_minimap) return;
 
     // Draw lines of the level
@@ -134,7 +115,6 @@ static void render_minimap_4bpp(volatile uint8_t *vram) {
         int x2 = (FROM_FIXED(line->v2->x) + 400) / 16 + 4;
         int y2 = (FROM_FIXED(line->v2->y) + 250) / 16 + 4;
 
-        // Simple line drawing
         int dx = (x2 > x1) ? (x2 - x1) : (x1 - x2);
         int dy = (y2 > y1) ? (y2 - y1) : (y1 - y2);
         int sx = (x1 < x2) ? 1 : -1;
@@ -142,7 +122,8 @@ static void render_minimap_4bpp(volatile uint8_t *vram) {
         int err = dx - dy;
 
         while (1) {
-            put_pixel_4bpp(vram, x1, y1, (line->flags & ML_TWOSIDED) ? 7 : 9);
+            uint8_t col = (line->flags & ML_TWOSIDED) ? 224 : 112; // Amber/grey
+            put_pixel(vram, x1, y1, col);
             if (x1 == x2 && y1 == y2) break;
             int e2 = 2 * err;
             if (e2 > -dy) { err -= dy; x1 += sx; }
@@ -153,11 +134,10 @@ static void render_minimap_4bpp(volatile uint8_t *vram) {
     // Draw player position
     int px = (FROM_FIXED(viewx) + 400) / 16 + 4;
     int py = (FROM_FIXED(viewy) + 250) / 16 + 4;
-    put_pixel_4bpp(vram, px, py, 4); // White dot
-    // Player facing tick
+    put_pixel(vram, px, py, 4); // White dot
     int dir_x = px + FROM_FIXED(viewsin * 4);
     int dir_y = py + FROM_FIXED(viewcos * 4);
-    put_pixel_4bpp(vram, dir_x, dir_y, 5); // Red tick
+    put_pixel(vram, dir_x, dir_y, 176); // Red tick
 }
 
 // ==============================================================================
@@ -165,6 +145,9 @@ static void render_minimap_4bpp(volatile uint8_t *vram) {
 // ==============================================================================
 static void render_doom_v3_frame(void) {
     volatile uint8_t *vram = (volatile uint8_t *)VGA_VRAM_BASE;
+
+    // 0. Synchronize with VGA Vertical Blanking to prevent screen tearing
+    wait_for_vblank();
 
     // 1. Reset Clipping and Occlusion Buffers
     R_ClearDrawSegs();
@@ -186,14 +169,14 @@ static void render_doom_v3_frame(void) {
     R_DrawMasked();
     gemm_batches++;
 
-    // 5. Render First-Person Super Shotgun
-    render_weapon_4bpp(vram);
+    // 5. Render Authentic First-Person Super Shotgun
+    render_weapon(vram);
 
-    // 6. Render Status Bar HUD
-    render_status_bar_4bpp(vram);
+    // 6. Render Authentic Status Bar HUD
+    render_status_bar(vram);
 
     // 7. Render Minimap Overlay
-    render_minimap_4bpp(vram);
+    render_minimap(vram);
 
     frame_count++;
 }
@@ -286,12 +269,9 @@ int main(void) {
     // 0. Clear 64,000-byte VRAM to black
     memset((void *)VGA_VRAM_BASE, 0, VRAM_BYTES);
 
-    // 1. Initialize 256-color 12-bit RGB Palette
-    setup_doom_palette_4bpp();
-
-    // 2. Initialize Textures, Flats, Sprites, and HUD
-    init_doom_assets_4bpp();
-    neorv32_uart0_printf("[ASSETS] Authentic DOOM 2 textures, flats & Super Shotgun loaded!\n");
+    // 1. Initialize 256-color 12-bit RGB Palette from authentic DOOM 2 PLAYPAL
+    setup_authentic_doom2_palette();
+    neorv32_uart0_printf("[ASSETS] Authentic DOOM 2 256-color PLAYPAL, STARTAN3 & Super Shotgun loaded!\n");
 
     // 3. Initialize Map Geometry & Mobjs
     P_InitMobjs();

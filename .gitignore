@@ -30,3 +30,7 @@ __pycache__/
 *.tmp
 ~*
 .vscode/
+
+# Game data lumps
+*.wad
+*.WAD

@@ -1,6 +1,6 @@
 #include "r_segs.h"
 #include "r_bsp.h"
-#include "doom_assets_4bpp.h"
+#include "doom_assets_authentic.h"
 #include <string.h>
 
 int16_t ceilingclip[SCREEN_W];
@@ -114,34 +114,31 @@ void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
 
         // 1. One-Sided Solid Wall
         if (!is_twosided) {
-            // Draw ceiling up to top of wall
+            // Draw ceiling up to top of wall (DOOM 2 index 112)
             for (int y = 0; y < y_ceil; y++) {
                 if (y > ceilingclip[x] && y < floorclip[x]) {
-                    put_pixel_4bpp(vram, x, y, 11); // Tech blue ceiling flat
+                    vram[y * SCREEN_W + x] = 112; // Authentic tech blue ceiling
                 }
             }
 
-            // Draw solid wall texture
+            // Draw solid wall texture (Authentic DOOM 2 STARTAN3 64x64)
             int wall_h = y_floor - y_ceil;
-            if (wall_h > 0 && mid_tex >= 0 && mid_tex < NUM_WALL_TEX) {
-                uint8_t *tex = wall_textures[mid_tex];
+            if (wall_h > 0) {
                 for (int y = y_ceil; y <= y_floor; y++) {
                     if (y > ceilingclip[x] && y < floorclip[x]) {
                         int texY = ((y - y_ceil) * 64) / wall_h;
                         if (texY < 0) texY = 0;
                         if (texY >= 64) texY = 63;
-                        int byte_idx = (texY * 64 + texX) >> 1;
-                        uint8_t col = (texX & 1) ? (tex[byte_idx] & 0x0F) : (tex[byte_idx] >> 4);
-                        if (shade > 0 && col > 1) col -= shade; // Apply distance lighting
-                        put_pixel_4bpp(vram, x, y, col);
+                        uint8_t col = tex_startan3[texY * 64 + texX];
+                        vram[y * SCREEN_W + x] = col;
                     }
                 }
             }
 
-            // Draw floor below wall
+            // Draw floor below wall (DOOM 2 index 72 brown stone)
             for (int y = y_floor + 1; y < VIEWPORT_H; y++) {
                 if (y > ceilingclip[x] && y < floorclip[x]) {
-                    put_pixel_4bpp(vram, x, y, 1); // Dark grey stone floor flat
+                    vram[y * SCREEN_W + x] = 72; // Authentic brown stone floor flat
                 }
             }
 
@@ -156,16 +153,15 @@ void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
             int y_b_floor = CENTER_Y - (int)(((int64_t)(back->floorheight - viewz) * FOCAL_LEN) / tz);
 
             // Upper texture (step down ceiling)
-            if (front->ceilingheight > back->ceilingheight && top_tex >= 0 && top_tex < NUM_WALL_TEX) {
+            if (front->ceilingheight > back->ceilingheight) {
                 int upper_h = y_b_ceil - y_ceil;
                 if (upper_h > 0) {
-                    uint8_t *tex = wall_textures[top_tex];
                     for (int y = y_ceil; y <= y_b_ceil; y++) {
                         if (y > ceilingclip[x] && y < floorclip[x]) {
                             int texY = ((y - y_ceil) * 64) / upper_h;
-                            int byte_idx = (texY * 64 + texX) >> 1;
-                            uint8_t col = (texX & 1) ? (tex[byte_idx] & 0x0F) : (tex[byte_idx] >> 4);
-                            put_pixel_4bpp(vram, x, y, col);
+                            if (texY < 0) texY = 0;
+                            if (texY >= 64) texY = 63;
+                            vram[y * SCREEN_W + x] = tex_startan3[texY * 64 + texX];
                         }
                     }
                 }
@@ -173,16 +169,15 @@ void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
             }
 
             // Lower texture (STAIRS / Step up floor!)
-            if (back->floorheight > front->floorheight && bot_tex >= 0 && bot_tex < NUM_WALL_TEX) {
+            if (back->floorheight > front->floorheight) {
                 int lower_h = y_floor - y_b_floor;
                 if (lower_h > 0) {
-                    uint8_t *tex = wall_textures[bot_tex];
                     for (int y = y_b_floor; y <= y_floor; y++) {
                         if (y > ceilingclip[x] && y < floorclip[x]) {
                             int texY = ((y - y_b_floor) * 64) / lower_h;
-                            int byte_idx = (texY * 64 + texX) >> 1;
-                            uint8_t col = (texX & 1) ? (tex[byte_idx] & 0x0F) : (tex[byte_idx] >> 4);
-                            put_pixel_4bpp(vram, x, y, col);
+                            if (texY < 0) texY = 0;
+                            if (texY >= 64) texY = 63;
+                            vram[y * SCREEN_W + x] = tex_startan3[texY * 64 + texX];
                         }
                     }
                 }
