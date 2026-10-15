@@ -11,8 +11,12 @@ extern "C" {
 // ==============================================================================
 // Memory-Mapped I/O Base Addresses
 // ==============================================================================
-#define VGA_VRAM_BASE       0x90000000UL  // 160x120 Framebuffer (19,200 bytes)
+#ifndef VGA_VRAM_BASE
+#define VGA_VRAM_BASE       0x90000000UL  // Framebuffer base address
+#endif
+#ifndef VGA_PALETTE_BASE
 #define VGA_PALETTE_BASE    0x90010000UL  // 256 x 12-bit RGB Color Lookup Table
+#endif
 #define VGA_CTRL_BASE       0x90010400UL  // Status Register ([0]: in_vblank)
 
 #define PS2_DATA_REG        0x90020000UL  // Keyboard Scancode FIFO read

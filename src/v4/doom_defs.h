@@ -209,13 +209,8 @@ static inline uint8_t get_pixel(const volatile uint8_t *vram, int x, int y) {
 #define VGA_STAT_VBLANK     (1 << 0)
 
 static inline void wait_for_vblank(void) {
-    volatile uint32_t *vga_stat = (volatile uint32_t *)VGA_STATUS_REG;
-    int timeout = 250000;
-    // Wait for ongoing VBlank to complete
-    while ((*vga_stat & VGA_STAT_VBLANK) && --timeout > 0);
-    timeout = 250000;
-    // Wait for start of next VBlank interval
-    while (!(*vga_stat & VGA_STAT_VBLANK) && --timeout > 0);
+    // Hardware VBlank status register 0x90010400 returns 0 on xc7a35t single-buffered BRAM.
+    // Stubbed to no-op to eliminate 110ms artificial delay per frame.
 }
 
 #endif // DOOM_DEFS_H

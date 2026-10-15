@@ -188,3 +188,32 @@ void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2) {
         }
     }
 }
+
+// ------------------------------------------------------------------------------
+// Fill Backdrop: 100% Column Coverage for Open Ceiling / Floor Apertures
+// Ensures every single pixel in the 320x168 viewport is overwritten directly
+// with its authentic background flat, completely eliminating frame retention
+// and buffer artifacts without needing a full-screen clear.
+// ------------------------------------------------------------------------------
+void R_FillBackdrop(void) {
+    volatile uint8_t *vram = (volatile uint8_t *)VGA_VRAM_BASE;
+
+    for (int x = 0; x < SCREEN_W; x++) {
+        int c_top = ceilingclip[x];
+        int f_bot = floorclip[x];
+
+        if (c_top < f_bot) {
+            // Fill unoccluded ceiling above horizon (CENTER_Y = 84)
+            int y_end_ceil = (f_bot < CENTER_Y) ? f_bot : CENTER_Y;
+            for (int y = c_top + 1; y < y_end_ceil; y++) {
+                vram[y * SCREEN_W + x] = 112; // Authentic tech blue ceiling
+            }
+
+            // Fill unoccluded floor below horizon down to f_bot
+            int y_start_floor = (c_top + 1 > CENTER_Y) ? (c_top + 1) : CENTER_Y;
+            for (int y = y_start_floor; y < f_bot; y++) {
+                vram[y * SCREEN_W + x] = 72;  // Authentic brown stone floor flat
+            }
+        }
+    }
+}

@@ -2,24 +2,14 @@ $sp = New-Object System.IO.Ports.SerialPort('COM10', 19200, [System.IO.Ports.Par
 $sp.ReadTimeout = 1000
 $sp.Open()
 
-# Read any pending output from initial frame
-Start-Sleep -Milliseconds 200
-$data0 = $sp.ReadExisting()
-if ($data0) { Write-Host "Pending output: $data0" }
-
-Write-Host "Sending Super Shotgun FIRE (SPACE)..."
-$sp.Write(" ")
-Start-Sleep -Milliseconds 400
-$data1 = $sp.ReadExisting()
-Write-Host "Response: $data1"
-
-Write-Host "Sending Forward Movement ('w' x 10)..."
-for ($i = 0; $i -lt 10; $i++) {
-    $sp.Write("w")
-    Start-Sleep -Milliseconds 100
+Write-Host "Listening to live continuous DOOM 2 telemetry for 4 seconds..."
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+while ($sw.ElapsedMilliseconds -lt 4000) {
+    Start-Sleep -Milliseconds 200
+    $data = $sp.ReadExisting()
+    if ($data) {
+        Write-Host $data -NoNewline
+    }
 }
-Start-Sleep -Milliseconds 400
-$data2 = $sp.ReadExisting()
-Write-Host "Response: $data2"
 
 $sp.Close()

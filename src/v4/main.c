@@ -99,6 +99,21 @@ static void render_weapon(volatile uint8_t *vram) {
     int wpn_x = (SCREEN_W - wpn->width) / 2;
     int wpn_y = VIEWPORT_H - wpn->height + (walk_bob ? 3 : 0);
     draw_authentic_patch(vram, wpn, wpn_x, wpn_y);
+
+    if (muzzle_flash > 0) {
+        // Draw dual muzzle flash plumes over twin barrels (authentic DOOM 2 fire blast)
+        int barrel_cx = wpn_x + (wpn->width / 2);
+        int barrel_y = wpn_y - 6;
+        for (int dy = -10; dy <= 0; dy++) {
+            for (int dx = -24; dx <= 24; dx++) {
+                int dist_sq = dx * dx + dy * dy * 4;
+                if (dist_sq < 360) {
+                    uint8_t col = (dist_sq < 90) ? 4 : ((dist_sq < 220) ? 224 : 176);
+                    put_pixel(vram, barrel_cx + dx, barrel_y + dy, col);
+                }
+            }
+        }
+    }
 }
 
 // ==============================================================================
@@ -164,6 +179,9 @@ static void render_doom_v3_frame(void) {
 
     // 3. Front-to-Back Recursive BSP Tree Traversal & Linedef Rasterization
     R_RenderBSPNode(0);
+
+    // 4. Fill unoccluded column apertures (100% background coverage, zero-retention)
+    R_FillBackdrop();
 
     // 4. Render Dynamic 2.5D Mobjs (Imps, Fireballs, Barrels) via GEMM Coprocessor
     R_DrawMasked();
@@ -266,8 +284,11 @@ int main(void) {
     neorv32_uart0_printf("             SPACE=Fire Super Shotgun, M=Map, R=Reset \n");
     neorv32_uart0_printf("======================================================\n\n");
 
-    // 0. Clear 64,000-byte VRAM to black
-    memset((void *)VGA_VRAM_BASE, 0, VRAM_BYTES);
+    // 0. Clear 64,000-byte VRAM to black (byte-by-byte for hardware BRAM interface)
+    volatile uint8_t *vram_init = (volatile uint8_t *)VGA_VRAM_BASE;
+    for (int i = 0; i < VRAM_BYTES; i++) {
+        vram_init[i] = 0;
+    }
 
     // 1. Initialize 256-color 12-bit RGB Palette from authentic DOOM 2 PLAYPAL
     setup_authentic_doom2_palette();
@@ -282,15 +303,13 @@ int main(void) {
     neorv32_uart0_printf("[DOOM 2] First Native 320x200 Mode 13h frame rendered successfully!\n");
 
     int last_report = 0;
+    neorv32_uart0_printf("[DEBUG] Entering main loop!\n");
 
     while (1) {
-        bool state_changed = false;
-
-        // Poll UART0 (PC Keyboard)
-        if (neorv32_uart0_available()) {
-            char cmd = (char)neorv32_uart0_getc();
+        // Poll UART0 (PC Keyboard) - Non-blocking character check!
+        if (neorv32_uart0_char_received()) {
+            char cmd = neorv32_uart0_char_received_get();
             handle_input(cmd);
-            state_changed = true;
         }
 
         // Poll PS/2 Keyboard Port
@@ -299,24 +318,20 @@ int main(void) {
             char ch = ps2_scancode_to_ascii(sc);
             if (ch) {
                 handle_input(ch);
-                state_changed = true;
             }
         }
 
         // 35 Hz Ticker: Advance Monster AI, Fireball Projectiles, and Animations
         P_Ticker();
 
-        // Render Frame
-        if (state_changed || muzzle_flash > 0) {
-            if (muzzle_flash > 0) muzzle_flash--;
+        // Render Frame continuously for fluid, retention-free gameplay
+        render_doom_v3_frame();
+        if (muzzle_flash > 0) muzzle_flash--;
 
-            render_doom_v3_frame();
-
-            if (frame_count - last_report >= 10) {
-                last_report = frame_count;
-                neorv32_uart0_printf("[DOOM v3] Frame: %u | GEMM Batches: %u | Health: %d | Ammo: %d\n",
-                    frame_count, gemm_batches, player_health, player_ammo);
-            }
+        if (frame_count <= 10 || frame_count - last_report >= 30) {
+            last_report = frame_count;
+            neorv32_uart0_printf("[DOOM 2] Frame: %u | GEMM Batches: %u | Health: %d | Ammo: %d\n",
+                frame_count, gemm_batches, player_health, player_ammo);
         }
     }
 
