@@ -7,7 +7,7 @@
 [![Hardware Coprocessor](https://img.shields.io/badge/Coprocessor-8x8%20Systolic%20GEMM-brightgreen?style=flat-square)]()
 [![Author](https://img.shields.io/badge/Author-JeromeAntonyRobin-black?style=flat-square)](https://github.com/JeromeAntonyRobin)
 
-An authentic, hardware-accelerated bare-metal port of the **Id Software 3D DOOM graphics pipeline** running on the **NEORV32 RISC-V SoC** on a **Digilent Basys 3 FPGA (`xc7a35tcpg236-1`)**. Features custom hardware VGA scanout, a debounced PS/2 keyboard receiver, and an **8x8 Systolic-Array GEMM Coprocessor** executing parallel 3D matrix transformations in hardware.
+An authentic, hardware-accelerated bare-metal port of the **Id Software 3D DOOM graphics pipeline** running on the **GEMMrv32 RISC-V SoC** on a **Digilent Basys 3 FPGA (`xc7a35tcpg236-1`)**. Features custom hardware VGA scanout, a debounced PS/2 keyboard receiver, and an **8x8 Systolic-Array GEMM Coprocessor** executing parallel 3D matrix transformations in hardware.
 
 ---
 
