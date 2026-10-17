@@ -19,16 +19,14 @@ build:
 	@echo "SUCCESS: Output binary generated in bin/demo_vga_doom.bin"
 
 flash-bit:
-	@echo "=== Programming Basys 3 FPGA Bitstream via openFPGALoader (JTAG) ==="
-	$(OPENFPGALOADER) --board=basys3 bit/neorv32_basys3.bit
+	@tools/flash_bitstream.sh bit/neorv32_basys3.bit
 
 flash-spi:
 	@echo "=== Flashing Basys 3 Non-Volatile SPI Flash via openFPGALoader ==="
-	$(OPENFPGALOADER) --board=basys3 -f bit/neorv32_basys3.bin
+	sudo $(OPENFPGALOADER) --board=basys3 -f bit/neorv32_basys3.bin
 
 upload:
-	@echo "=== Uploading DOOM Binary to NEORV32 Bootloader via Serial ==="
-	$(PYTHON) tools/upload_serial.py --port $(SERIAL_PORT) --baud $(BAUD) bin/demo_vga_doom.bin
+	@tools/flash_firmware.sh $(SERIAL_PORT) bin/demo_vga_doom.bin
 
 clean:
 	$(MAKE) -C src RISCV_PREFIX=$(RISCV_PREFIX) clean_all
