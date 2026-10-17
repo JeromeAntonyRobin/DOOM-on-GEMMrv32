@@ -1,0 +1,45 @@
+# Installed Open-Source Tools Tracking Log
+Date: 2026-10-17
+Host: econsystems (Ubuntu 24.04.5 LTS noble)
+
+All installed toolchain binaries and libraries were placed strictly in user-space under:
+  `/home/econsystems/.local/`
+
+NO root packages or system directories were modified.
+
+--------------------------------------------------------------------------------
+1. Installed Packages / Toolchains:
+--------------------------------------------------------------------------------
+A. openFPGALoader (v1.1.1):
+   - Location: /home/econsystems/.local/opt/openFPGALoader
+   - Wrapper binary: /home/econsystems/.local/bin/openFPGALoader
+   - Udev rules reference: /home/econsystems/.local/opt/openFPGALoader/etc/udev/rules.d/99-openfpgaloader.rules
+   - Shared library bundled locally: libhidapi-libusb.so.0 (extracted into /home/econsystems/.local/opt/openFPGALoader/lib)
+
+B. xPack GNU RISC-V Embedded GCC Toolchain (v15.2.0-1):
+   - Location: /home/econsystems/.local/opt/riscv-toolchain
+   - Symlinks in /home/econsystems/.local/bin:
+     * riscv-none-elf-*
+     * riscv64-unknown-elf-* (compatibility aliases)
+
+C. Python UART Bootloader Upload Tool:
+   - Location: tools/upload_serial.py
+   - Uses pyserial (pre-existing system package)
+
+--------------------------------------------------------------------------------
+2. How to Completely Remove All Installed Toolchains:
+--------------------------------------------------------------------------------
+Run the following cleanup command to purge everything installed:
+
+  rm -rf /home/econsystems/.local/opt/openFPGALoader
+  rm -rf /home/econsystems/.local/opt/riscv-toolchain
+  rm -f  /home/econsystems/.local/bin/openFPGALoader
+  rm -f  /home/econsystems/.local/bin/riscv-none-elf-*
+  rm -f  /home/econsystems/.local/bin/riscv64-unknown-elf-*
+
+--------------------------------------------------------------------------------
+3. Note on USB JTAG Permissions for Basys 3:
+--------------------------------------------------------------------------------
+To permit non-root access to the FT2232 JTAG port by openFPGALoader:
+  sudo cp /home/econsystems/.local/opt/openFPGALoader/etc/udev/rules.d/99-openfpgaloader.rules /etc/udev/rules.d/
+  sudo udevadm control --reload-rules && sudo udevadm trigger
