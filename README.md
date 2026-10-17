@@ -169,3 +169,14 @@ Dual-mode input is active across both the **Host PC Keyboard** (via serial termi
 For the complete technical manual covering the memory map, MMIO registers, driver call flows, and detailed post-mortems of all 9 hardware and software anomalies solved during development, consult:
 
 📖 [**`docs/DOOM-on-GEMMrv32-doc.md`**](docs/DOOM-on-GEMMrv32-doc.md)
+
+
+```
+Project:            DOOM-on-GEMMrv32: Bare-Metal 3D Graphics on Edge AI Silicon
+SoC Architecture:   GEMMrv32 (Custom NEORV32 RV32IM @ 50.0 MHz)
+Coprocessor:        8x8 Systolic-Array GEMM Accelerator + 256-bit Wide DMA Engine
+Target Silicon:     Xilinx Artix-7 (XC7A35T-1CPG236C) on Digilent Basys 3
+Integrated IDE:     GEMMrvStudio (The Silis Foundation)
+Display Core:       Dual-Port 19,200 B VRAM + 4x Hardware Upscaler (640x480 @ 60 Hz 12-bit RGB)
+Primary Author:     Jerome Antony Robin (The Silis Foundation)
+```
