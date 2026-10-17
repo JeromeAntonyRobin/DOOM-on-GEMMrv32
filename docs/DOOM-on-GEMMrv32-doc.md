@@ -7,7 +7,6 @@ Coprocessor:        8x8 Systolic-Array GEMM Accelerator + 256-bit Wide DMA Engin
 Target Silicon:     Xilinx Artix-7 (XC7A35T-1CPG236C) on Digilent Basys 3
 Integrated IDE:     GEMMrvStudio (The Silis Foundation)
 Display Core:       Dual-Port 19,200 B VRAM + 4x Hardware Upscaler (640x480 @ 60 Hz 12-bit RGB)
-Repository:         /home/econsystems/random/DOOM-on-GEMMrv32
 Primary Author:     Jerome Antony Robin (The Silis Foundation)
 ```
 
