@@ -265,6 +265,37 @@ During the development and testing of this architecture on the Basys 3 FPGA, six
 
 ---
 
+### Anomaly 7: Stack Pointer Overflow & Infinite Reset Loop
+* **Observed Symptom**: On boot, the VGA monitor locked onto 640x480 sync but stayed black, while UART console repeatedly printed the first banner line in an infinite reset loop.
+* **Root Cause**:
+  In `sw/basys/neorv32_basys3_top.vhd`, Data RAM was synthesized as 64 KB (`0x80000000..0x8000FFFF`). However, `sw/common/neorv32.ld` had hardcoded `__neorv32_ram_size = 128k`. In `crt0.S`, the stack pointer was set to `0x80000000 + 128k = 0x80020000` (64 KB above physical RAM). When `neorv32_uart0_printf()` executed `sw ra, 28(sp)`, the return address was written to unmapped space. The subsequent `ret` read `0x00000000` and jumped to instruction 0 in ROM, endlessly resetting.
+* **Mitigation**:
+  Parameterised `__neorv32_ram_size` in `sw/common/neorv32.ld` (defaulting to 64k) and enforced `--defsym,__neorv32_ram_size=65536` in the makefile, establishing `__crt0_stack_top = 0x80010000` safely inside physical RAM.
+
+---
+
+### Anomaly 8: PS/2 Keyboard Pin Swap & Double-Pop Bus Glitch
+* **Observed Symptom**: The USB keyboard connected via the Basys 3 PIC24 host bridge failed to register any keypresses; NumLock/CapsLock LEDs stayed dark.
+* **Root Cause**:
+  1. **Pin Swap in XDC**: In `sw/basys/basys3.xdc`, `B17` was assigned to `ps2_clk_i` and `C17` to `ps2_data_i`. According to the Basys 3 schematic, `C17` is Clock and `B17` is Data. The FPGA was sampling data off the clock line.
+  2. **Wishbone 2-Cycle Double-Pop**: In `neorv32_basys3_top.vhd`, `ps2_re` was combinationally driven by `ps2_sel and not xbus_we`. Because Wishbone read cycles span 2 clock cycles (strobe + ack), every CPU `lw` instruction asserted read-enable twice, popping two bytes per keypress and returning `0x00`.
+  3. **Simultaneous Push/Pop Race**: In `neorv32_ps2.vhd`, capturing a stop bit while the CPU read the FIFO corrupted `fifo_count`.
+* **Mitigation**:
+  Corrected pin assignments (`C17` = Clock, `B17` = Data), gated FIFO read-enable strictly with `xbus_ack = '1'`, and unified push/pop logic into atomic increment/decrement variables with a 100 µs idle resync timer.
+
+---
+
+### Anomaly 9: UART Stream Overrun & Dropped Bytes During Firmware Upload
+* **Observed Symptom**: Streaming firmware binary over UART hung partway through or reported `ERROR_EXCEPTION` / `ERROR_SIGNATURE`.
+* **Root Cause**:
+  1. `neorv32_basys3_top.vhd` lacked explicit FIFO configuration, defaulting to a 1-byte hardware RX buffer.
+  2. The machine timer interrupt (`CSR_MIE_MTIE`) triggered every 250 ms to toggle a heartbeat LED, preempting the CPU for ~100 clock cycles during continuous streaming and overflowing the 1-byte buffer.
+  3. Trailing `\r\n` from pressing `<Enter>` after typing `u` in terminal emulators remained in the RX FIFO, shifting the header signature.
+* **Mitigation**:
+  Synthesized **64-byte hardware RX/TX FIFOs** (`IO_UART0_RX_FIFO => 64`), disabled machine timer interrupts in `uart_setup()` during stream reception, and updated `uart_stream_get()` to discard leading CR/LF before parsing the executable header.
+
+---
+
 ## 6. Directory Index & File Map
 
 ```
