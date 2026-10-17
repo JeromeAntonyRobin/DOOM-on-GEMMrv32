@@ -15,7 +15,8 @@ all: build
 build:
 	@echo "=== Building DOOM (Authentic BSP + GEMM Coprocessor) ==="
 	$(MAKE) -C src RISCV_PREFIX=$(RISCV_PREFIX) elf
-	$(PYTHON) tools/image_gen.py -i src/main.elf -o bin/demo_vga_doom.bin
+	$(RISCV_PREFIX)objcopy -I elf32-littleriscv -O binary src/main.elf src/main_raw.bin
+	$(PYTHON) tools/image_gen.py -i src/main_raw.bin -o bin/demo_vga_doom.bin
 	@echo "SUCCESS: Output binary generated in bin/demo_vga_doom.bin"
 
 flash-bit:

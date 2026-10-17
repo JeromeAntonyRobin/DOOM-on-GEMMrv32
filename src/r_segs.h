@@ -9,13 +9,22 @@
 
 void R_InitSegs(void);
 void R_ClearDrawSegs(void);
-void R_AddLine(line_t *line);
-void R_StoreWallRange(int x1, int x2, line_t *line, fixed_t tz1, fixed_t tz2, sector_t *front, sector_t *back);
+void R_AddLine(const line_t *line);
+void R_StoreWallRange(int x1, int x2, const line_t *line, fixed_t tz1, fixed_t tz2, sector_t *front, sector_t *back);
 void R_FillBackdrop(void);
 
 // 1D Screen Column Clipping Buffers (Top ceiling clip, Bottom floor clip)
 extern int16_t ceilingclip[SCREEN_W];
 extern int16_t floorclip[SCREEN_W];
+
+// Saved portal boundaries and distance for precise sprite occlusion (stairs, ledges)
+extern int16_t portal_ceilingclip[SCREEN_W];
+extern int16_t portal_floorclip[SCREEN_W];
+extern fixed_t portal_dist_buffer[SCREEN_W];
+
+// Weapon silhouette top edge (floor and sprites stop here to completely eliminate gun flicker)
+extern uint8_t weapon_top_clip[SCREEN_W];
+void R_InitWeaponClip(void);
 
 // Depth buffer for 320 columns
 extern fixed_t wall_dist_buffer[SCREEN_W];

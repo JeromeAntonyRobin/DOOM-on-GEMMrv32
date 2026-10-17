@@ -13,6 +13,7 @@ mobj_t *player_mobj = NULL;
 extern int player_health;
 extern int player_ammo;
 extern int player_score;
+bool use_gemm_hw = true;
 
 
 
@@ -21,10 +22,13 @@ extern int player_score;
 // ------------------------------------------------------------------------------
 void P_InitMobjs(void) {
     num_mobjs = 0;
+    player_mobj = NULL;
     memset(mobjs, 0, sizeof(mobjs));
 
-    for (size_t i = 0; i < NUM_SPAWNS; i++) {
-        const mobj_spawn_t *s = &map_spawns[i];
+    if (!cur_map) return;
+
+    for (int i = 0; i < cur_map->num_spawns; i++) {
+        const mobj_spawn_t *s = &cur_map->spawns[i];
         mobj_t *mo = P_SpawnMobj(s->x, s->y, s->z, s->type, s->angle);
         if (s->type == MT_PLAYER) {
             player_mobj = mo;
@@ -244,14 +248,35 @@ void R_DrawMasked(void) {
     view_matrix[1 * 4 + 0] = c_sin;
     view_matrix[1 * 4 + 1] = c_cos;
     view_matrix[2 * 4 + 2] = 64;
-    view_matrix[3 * 4 + 3] = 64;
+    if (use_gemm_hw) {
+        gpu_transform_vertices_8x(in_coords, view_matrix, gemm_out);
+    } else {
+        // Pure software RV32 CPU transformation (SW Render Mode)
+        for (int i = 0; i < entity_count; i++) {
+            int8_t x = in_coords[i * 4 + 0];
+            int8_t y = in_coords[i * 4 + 1];
+            int8_t z = in_coords[i * 4 + 2];
+            gemm_out[i * 4 + 0] = (x * view_matrix[0 * 4 + 0] + y * view_matrix[0 * 4 + 1]) / 64;
+            gemm_out[i * 4 + 1] = (x * view_matrix[1 * 4 + 0] + y * view_matrix[1 * 4 + 1]) / 64;
+            gemm_out[i * 4 + 2] = z;
+            gemm_out[i * 4 + 3] = 1;
+        }
+    }
 
-    gpu_transform_vertices_8x(in_coords, view_matrix, gemm_out);
+    // Collect and project visible mobjs
+    typedef struct {
+        int mobj_idx;
+        fixed_t tz;
+        fixed_t tx;
+    } vis_mobj_t;
 
-    // Render sprites
+    vis_mobj_t vis_mobjs[MAX_MOBJS];
+    int num_vis = 0;
+
     for (int i = 0; i < num_mobjs; i++) {
         mobj_t *mo = &mobjs[i];
-        if (mo->type == MT_PLAYER) continue; // Don't draw player sprite on top of player camera
+        if (mo->type == MT_PLAYER) continue; // Don't draw player sprite
+        if (mo->health <= 0) continue;       // Dead monsters are not drawn
 
         fixed_t px = mo->x - viewx;
         fixed_t py = mo->y - viewy;
@@ -260,6 +285,30 @@ void R_DrawMasked(void) {
         fixed_t tx = FIXED_MUL(px, viewsin) - FIXED_MUL(py, viewcos);
 
         if (tz <= TO_FIXED(8)) continue; // Behind or too close
+
+        vis_mobjs[num_vis].mobj_idx = i;
+        vis_mobjs[num_vis].tz = tz;
+        vis_mobjs[num_vis].tx = tx;
+        num_vis++;
+    }
+
+    // Sort visible mobjs furthest first (descending tz: Painter's Algorithm)
+    // Completely eliminates sprite flickering and depth inversion artifacts
+    for (int i = 1; i < num_vis; i++) {
+        vis_mobj_t key = vis_mobjs[i];
+        int j = i - 1;
+        while (j >= 0 && vis_mobjs[j].tz < key.tz) {
+            vis_mobjs[j + 1] = vis_mobjs[j];
+            j--;
+        }
+        vis_mobjs[j + 1] = key;
+    }
+
+    // Render sprites strictly far-to-near
+    for (int i = 0; i < num_vis; i++) {
+        mobj_t *mo = &mobjs[vis_mobjs[i].mobj_idx];
+        fixed_t tz = vis_mobjs[i].tz;
+        fixed_t tx = vis_mobjs[i].tx;
 
         // Select authentic DOOM 2 monster patch
         const doom_patch_t *patch = NULL;
@@ -273,13 +322,15 @@ void R_DrawMasked(void) {
             continue; // Skip any entities without authentic DOOM 2 patches
         }
 
-        // Exact perspective projection aligned to floor
-        int screenX = CENTER_X + (int)(((int64_t)tx * FOCAL_LEN) / tz);
-        int top_z = mo->z + mo->height - viewz;
-        int bot_z = mo->z - viewz;
+        // Exact perspective projection aligned to floor (32-bit arithmetic)
+        int int_tz = FROM_FIXED(tz);
+        if (int_tz <= 0) int_tz = 1;
+        int screenX = CENTER_X + (FROM_FIXED(tx) * FOCAL_LEN) / int_tz;
+        int top_z = FROM_FIXED(mo->z + mo->height - viewz);
+        int bot_z = FROM_FIXED(mo->z - viewz);
 
-        int drawStartY = CENTER_Y - (int)(((int64_t)top_z * FOCAL_LEN) / tz);
-        int drawEndY   = CENTER_Y - (int)(((int64_t)bot_z * FOCAL_LEN) / tz);
+        int drawStartY = CENTER_Y - (top_z * FOCAL_LEN) / int_tz;
+        int drawEndY   = CENTER_Y - (bot_z * FOCAL_LEN) / int_tz;
         int spr_h      = drawEndY - drawStartY;
         if (spr_h <= 0) continue;
 

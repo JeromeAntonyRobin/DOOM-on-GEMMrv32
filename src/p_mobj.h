@@ -15,5 +15,6 @@ void P_Ticker(void);
 void R_DrawMasked(void);
 
 extern mobj_t *player_mobj;
+extern bool use_gemm_hw;
 
 #endif // P_MOBJ_H

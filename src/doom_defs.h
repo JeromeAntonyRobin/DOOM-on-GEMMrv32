@@ -10,16 +10,16 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Screen Dimensions (Authentic Basys 3 160x120 Framebuffer @ 8bpp upscaled 4x)
-#define SCREEN_W            160
-#define SCREEN_H            120
-#define VRAM_BYTES          (SCREEN_W * SCREEN_H) // 19,200 bytes at 8bpp (256 colors)
+// Screen Dimensions (Authentic Mode 13h 320x200 Framebuffer @ 8bpp: 64,000 bytes)
+#define SCREEN_W            320
+#define SCREEN_H            200
+#define VRAM_BYTES          (SCREEN_W * SCREEN_H) // 64,000 bytes at 8bpp (256 colors)
 
-#define VIEWPORT_H         100 // Top 100 scanlines (0..99) for 3D world
-#define STATUS_BAR_H        20 // Bottom 20 scanlines (100..119) for HUD
-#define CENTER_X           (SCREEN_W / 2)   // 80
-#define CENTER_Y           (VIEWPORT_H / 2) // 50
-#define FOCAL_LEN          80               // 80 units for ~90-deg FOV across 160 pixels
+#define VIEWPORT_H         168 // Top 168 scanlines (0..167) for 3D world
+#define STATUS_BAR_H        32  // Bottom 32 scanlines (168..199) for HUD
+#define CENTER_X           (SCREEN_W / 2)   // 160
+#define CENTER_Y           (VIEWPORT_H / 2) // 84
+#define FOCAL_LEN          160              // 160 units for authentic 90-deg FOV across 320 pixels
 
 // 16.16 Fixed-Point Arithmetic Definitions
 typedef int32_t fixed_t;
@@ -28,7 +28,7 @@ typedef int32_t fixed_t;
 #define TO_FIXED(x)         ((fixed_t)((x) * FP_ONE))
 #define FROM_FIXED(x)       ((int32_t)((x) >> FP_FRACBITS))
 #define FIXED_MUL(a, b)     ((fixed_t)(((int64_t)(a) * (int64_t)(b)) >> FP_FRACBITS))
-#define FIXED_DIV(a, b)     ((fixed_t)((((int64_t)(a)) << FP_FRACBITS) / (b)))
+#define FIXED_DIV(a, b)     ((fixed_t)((((a) << 8) / ((b) >> 8))))
 
 typedef uint32_t angle_t;
 #define ANG45               0x20000000
@@ -74,7 +74,6 @@ typedef struct {
     fixed_t   dx;
     fixed_t   dy;
     int16_t   flags;
-    side_t    *sidenum[2]; // 0: Front, 1: Back
     sector_t  *frontsector;
     sector_t  *backsector;
 } line_t;
