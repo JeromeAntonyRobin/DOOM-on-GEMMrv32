@@ -11,7 +11,7 @@
   <img src="docs/demo.jpeg" alt="DOOM running on GEMMrv32 on Digilent Basys 3 FPGA" width="90%" />
 </p>
 <p align="center">
-  <i>Live bare-metal execution on a Digilent Basys 3 FPGA: GEMMrv32 RISC-V SoC driving 640x480 @ 60 Hz VGA, with 3D entity geometry accelerated by hijacking an on-chip TinyML systolic GEMM accelerator. Developed and monitored using <b><a href="https://github.com/The-Silis-Foundation/GEMMrvStudio">GEMMrvStudio</a></b>.</i>
+  <i>Live bare-metal execution on a Digilent Basys 3 FPGA: The GEMMrv32 RISC-V SoC driving 640x480 @ 60 Hz VGA, with 3D entity geometry accelerated by repurposing its on-chip TinyML systolic GEMM accelerator as a geometry coprocessor. Developed and monitored using <b><a href="https://github.com/The-Silis-Foundation/GEMMrvStudio">GEMMrvStudio</a></b>.</i>
 </p>
 
 ---
@@ -20,7 +20,7 @@
 
 In modern microcontroller-class chips, dedicated hardware matrix accelerators are designed strictly for **Edge AI and TinyML workloads**—evaluating quantized INT8 convolutions, dense layers, and GEMM primitives for models like TensorFlow Lite Micro. Meanwhile, microcontroller-class RV32 cores typically lack hardware floating-point units or vector extensions, making real-time 3D affine projection and trigonometric geometry computationally prohibitive.
 
-**The Hack:** We hijacked the **GEMMrv32 8x8 Systolic GEMM Accelerator**—silicon engineered to accelerate neural network inference—and commandeered it as a **3D geometry coprocessor (GPU)**:
+**The Architectural Innovation:** Having architected the **GEMMrv32 8x8 Systolic GEMM Accelerator** for edge machine learning inference, we realized the underlying systolic architecture could be directly repurposed as a high-throughput **3D geometry coprocessor (GPU)**:
 
 * Instead of neural network weight tensors, the coprocessor is loaded with a **$4 \times 4$ camera projection and view matrix**.
 * Instead of activation feature maps, batches of 8 dynamic 3D world coordinate vectors are streamed into the array across its **256-bit wide DMA channel**.
